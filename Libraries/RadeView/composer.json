@@ -1,0 +1,34 @@
+{
+    "name": "biustudios/radeview",
+    "description": "The standalone version Rade Template Engine from Biurad in a single php file",
+    "type": "library",
+    "keywords": ["rade", "template", "view", "blade"],
+    "homepage": "https://github.com/biustudios/radeview",
+    "license": "MIT",
+    "authors": [{
+        "name": "BiuStudios",
+        "email": "support@biuhub.net"
+    }],
+    "config": {
+        "platform": {
+            "php": "5.6.1"
+        }
+    },
+    "require": {
+        "php": ">=5.6",
+        "ext-json": "*"
+    },
+    "archive": {
+        "exclude": ["examples", "tests-html"]
+    },
+    "autoload": {
+        "psr-4": {
+            "Rlis\\RadeView\\": "src/namespaces/",
+            "Rlis\\RadeView\\test\\": "tests/"
+        }
+    },
+    "prefer-stable": true,
+    "require-dev": {
+        "phpunit/phpunit": "^5.7"
+    }
+}

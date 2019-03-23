@@ -1,0 +1,44 @@
+{
+    "name": "biustudios/radebase",
+    "description": "Procedural MysqlI Data access class in a single Class",
+    "version": "3.24",
+    "type": "library",
+    "keywords": [
+        "dao",
+        "php",
+        "mysqli"
+    ],
+    "homepage": "https://github.com/biustudios/radebase",
+    "authors": [{
+        "name": "BiuStudios Ghana",
+        "homepage": "https://github.com/biustudios/radebase"
+    }],
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Rlis\\RadeBase\\": "src/namespaces/"
+        },
+        "files": [
+            "src/classes/RadeBase.php"
+        ]
+    },
+    "prefer-stable": true,
+    "autoload-dev": {
+        "psr-4": {
+            "Rlis\\RadeBase\\tests\\": "tests/"
+        }
+    },
+    "require": {
+        "ext-mysqli": "*",
+        "ext-json": "*",
+        "biustudios/radion": "0.1.*",
+        "illuminate/database": "5.2.*"
+    },
+    "suggest": {
+        "biustudios/radion": "Require the core framework",
+        "biustudios/biustudios": "Require the core framework"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^5.7"
+    }
+}

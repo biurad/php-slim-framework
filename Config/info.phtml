@@ -1,0 +1,37 @@
+<?php
+
+return [
+
+    /**
+     * Configuration for: Base URL
+     * This detects your URL/IP incl. sub-folder automatically. You can also deactivate auto-detection and provide the
+     * URL manually. This should then look like 'http://192.168.33.44/' ! Note the slash in the end.
+     */
+    'URL'      => 'http://' . $_SERVER['HTTP_HOST'] . str_replace('', '', dirname($_SERVER['SCRIPT_NAME'])),
+    
+    /**
+     * Configuration for: Software Name
+     * This is the default nname for the software
+     */
+    'SOFTWARE' => 'Biurad PHP Application',
+
+    /**
+     * Configuration for: Software Version
+     * Read more about software release notes at https://docs.biurad.ml/release-notes
+     */
+    'VERSION'  => '0145',
+
+    /**
+     * Configuration for: Application ID
+     * This is require for the software. You can regenerate a new key for the application id
+     */
+    'APPID'    => 'eaa4bccee989312f64de0cd44451e851',
+
+    /**
+     * Configuration for: Software type.
+     * Are you building a web application system, then set the type to 'Module'
+     * You can set the framework to the default, thus type 'MVC' to use the framework.
+     */
+    'SOFTWARE_TYPE'  => 'MVC'
+
+];

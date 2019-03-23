@@ -1,0 +1,42 @@
+<?php
+
+return [
+    /**
+     * Alias Configuration for: Radion\\
+     */
+    'Radion\Bootstrap'                          =>      'Bootstrap',
+    'Radion\LoadManager'                        =>      'Loader',
+	'Radion\CacheManager' 						=> 		'Cache',
+	'Radion\ConfigManager' 						=> 		'Config',
+	'Radion\Filter'								=> 		'Filter',
+	'Radion\Database' 							=> 		'Database',
+    'Radion\ExceptionManager' 					=> 		'Debugger',
+	'Radion\ViewerManager' 						=> 		'Viewer',
+    'Radion\ServiceManager' 					=> 		'Service',
+    'Radion\TimeTrackr' 						=> 		'TimeTrackr',
+    
+    /**
+     * Alias Configuration for: Radion\\Http\\
+     */
+	'Radion\RouterManager' 						=> 		'Router',
+    'Radion\RequestManager'						=> 		'Request',
+    'Radion\ResponseManager' 					=> 		'Response',
+
+    /**
+     * Alias Configuration for: Radion\\DI\\
+     */
+    'Radion\Container' 						    => 		'App',
+    'Radion\SharerManager' 						=> 		'Sharer',
+    'Radion\DI\Singleton'                       =>      'Singleton',
+    
+    /**
+     * Alias Configuration for: Radion\\Service\\
+     */
+    'Radion\Service\ServiceContainer' 			=> 		'ServiceContainer',
+    
+    /**
+     * Alias Configuration for: Composer Dependencies
+     */
+	'Rakit\Validation\Validator' 				=> 		'Validator',
+	'eftec\DocumentStoreOne\DocumentStoreOne'	=> 		'DocumentDB'
+];

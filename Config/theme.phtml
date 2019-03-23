@@ -1,0 +1,44 @@
+<?php
+
+define('THEME_NAME', 'default');
+
+return [
+    /**
+     * Configuration for: Viewer Template type
+     * use 'DEFAULT' if you would like to write your views in the native or oob php.
+     * use 'RADEVIEW' if you would like to write your views like Lavarel Blade.
+     * use 'TWIG' if you would like to write your views in TWIG view engine.
+     */
+    'Template' => 'RADEVIEW',
+
+    /**
+     * Configuration for: Theme Url
+     * This is to set the themes base url
+     */
+    'theme_url' => $_SERVER['HTTP_HOST'] . str_replace('', '', dirname($_SERVER['SCRIPT_NAME'])),
+
+    /**
+     * Configuration for: Theme Based Folder
+     * This folder contains the themes for your project
+     */
+    'theme_folder' => 'Resource',
+
+    /**
+     * Configuration for: Themes Path
+     * The Derectory that contains the views theme
+     */
+    'theme_path' => 'Themes',
+
+    /**
+     * Configuration for: Storage Path
+     * The directory that contains the caches from templates, logs, uploads, temp, and more.
+     * It's like a recycle bin, but this bin is important.
+     */
+    'storage_path' => 'Storage',
+
+    /**
+     * Configuraation for: Theme Style
+     * This is the name of your default style for your views.
+     */
+    'theme_style' => THEME_NAME
+];
