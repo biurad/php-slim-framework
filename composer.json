@@ -1,5 +1,5 @@
 {
-    "name": "biurad/slim",
+    "name": "biurad/slim-framework",
     "description": "Biurad Slim Framework for PHP - Professional Lightweight Framework",
     "keywords": [
         "micro framework",
@@ -74,8 +74,7 @@
             "Application/Controller",
             "Application/Service",
             "Application/Middleware",
-            "Application/Helper",
-            "Libraries/"
+            "Application/Helper"
         ]
     }
 }
