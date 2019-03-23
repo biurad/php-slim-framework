@@ -1,2 +1,2 @@
-# slim-framework
+# Slim-framework
 Biurad Slim Framework for PHP - Professional Lightweight Framework
