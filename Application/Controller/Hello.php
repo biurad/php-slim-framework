@@ -2,7 +2,7 @@
 
 namespace Controller;
 
-use Radion\Http\Request;
+use Radion\RequestManager as Request;
 
 class Hello
 {

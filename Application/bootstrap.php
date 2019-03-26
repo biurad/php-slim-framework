@@ -85,7 +85,7 @@ $service = Service::loadServices();
 */
 Sharer::share('app', $app);
 Sharer::share('service', $service);
-Sharer::share('bootstrap', $bootstrap);
+Sharer::share('bootstrap', $boot);
 
 
 /*
