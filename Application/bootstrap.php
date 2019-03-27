@@ -31,7 +31,6 @@ TimeTrackr::init();
 */
 $app = new App;
 $app->ajax_check(false);
-$boot = new Bootstrap(true);
 
 /*
 |--------------------------------------------------------------------------
