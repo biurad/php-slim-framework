@@ -15,7 +15,7 @@
 | The Basic Routes - Route GET / into /home.php
 |--------------------------------------------------------------------------
 |
-| Requests from / will be served by the /home.php. You can also put
+| Requests from / will be served by the file /home.php. You can also put
 | view files (home.php) into any directory within the project.
 |
 */
@@ -23,30 +23,6 @@ Router::get('', function() {
 	Viewer::file('home');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Controller & HTTP Middleware Demonstration
-|--------------------------------------------------------------------------
-|
-| This is to demonstrate using Controller and Middleware with
-| StupidlySimple framework. Try to go to /hello or /hello/yourname and see
-| what it shows.
-|
-| Middleware is about how our application responds to incoming requests.
-| Middleware look into the incoming request, and make decisions based on
-| this request. We can build entire applications only using middleware.
-|
-| In this example, the hello middleware will demonstrate filtering a
-| request, which is the /route/to/be/filtered. Try to go to the url and
-| see what happen.
-|
-*/
-Router::group('Middleware\Hello@filter', function () {
-    Router::get('hello', 'hello');
-    Router::get('hello/(:any)', 'Controller\Hello@greetWithName');
-    Router::post('hello', 'Controller\Hello@greetForm');
-    Router::get('route/to/be/filtered', 'hello');
-});
 
 /*
 |--------------------------------------------------------------------------
@@ -66,8 +42,8 @@ Router::get('(:any)', function($match) {
 | Basic Crud Demonstration
 |--------------------------------------------------------------------------
 |
-| This is to demonstrate geting form data into a controller
+| This is to demonstrate posting form data and deleting into a controller
 |
 */
-//Router::get('error-forbidden', 'Controller\Custom_Exception@error_forbidden');
-//Router::get('error-custom', 'Controller\Custom_Exception@error_custom');
+//Router::post('updateuser', 'Controller\User@editUser');
+//Router::get('deleteuser', 'Controller\User@deleteUser');

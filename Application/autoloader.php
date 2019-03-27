@@ -9,7 +9,7 @@
 | the autoloader very well. Good guy Composer.
 |
 */
-require dirname(__DIR__).'/Vendor/autoload.php';
+require dirname(__DIR__) . '/Vendor/autoload.php';
 
 /*
 |--------------------------------------------------------------------------
@@ -21,7 +21,7 @@ require dirname(__DIR__).'/Vendor/autoload.php';
 | function everywhere in the project.
 |
 */
-Radion\ConfigManager::setEnv();
+Radion\Config::setEnv();
 
 /*
 |--------------------------------------------------------------------------
@@ -32,4 +32,4 @@ Radion\ConfigManager::setEnv();
 | configuration (located at config/env.php). 
 |
 */
-Radion\ExceptionManager::start();
+Radion\Debugger::start();

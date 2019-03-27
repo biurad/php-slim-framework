@@ -8,7 +8,7 @@
 | Reads the configuration file (config/aliases.php) and create aliases
 |
 */
-Radion\AliasManager::loadAliases();
+Radion\Alias::init();
 
 /*
 |--------------------------------------------------------------------------
@@ -18,7 +18,7 @@ Radion\AliasManager::loadAliases();
 | Reads the configuration file (config/datetime.php) and set timezone
 |
 */
-TimeTrackr::applyConfig();
+TimeTrackr::init();
 
 /*
 |--------------------------------------------------------------------------
@@ -29,8 +29,8 @@ TimeTrackr::applyConfig();
 | maintaining only one instantiation of a class.
 |
 */
-
-$app = new App();
+$app = new App;
+$app->ajax_check(false);
 $boot = new Bootstrap(true);
 
 /*
@@ -43,15 +43,6 @@ $boot = new Bootstrap(true);
 */
 $app->link('database', Database::connect());
 
-/**
- * ------------------------------------------------------------------------
- * Load The Application Helpers
- * ------------------------------------------------------------------------
- * 
- * Biurad uses the Application Helpers to, 
- * add external or custom script to the Framework.
- */
-
 
 /*
 |--------------------------------------------------------------------------
@@ -62,7 +53,7 @@ $app->link('database', Database::connect());
 | capabilities.
 |
 */
-$app->link('cachemanager', Cache::initialize());
+$app->link('cache', Cache::init());
 
 /*
 |--------------------------------------------------------------------------
@@ -87,7 +78,6 @@ Sharer::share('app', $app);
 Sharer::share('service', $service);
 Sharer::share('bootstrap', $boot);
 
-
 /*
 |--------------------------------------------------------------------------
 | Dispatch the Router
@@ -99,16 +89,6 @@ Sharer::share('bootstrap', $boot);
 
 Router::start();
 Router::dispatch();
-
-/*
-|--------------------------------------------------------------------------
-| Controller for Ajax System on the framework
-|--------------------------------------------------------------------------
-|
-| Makes the pages run even faster if Ajax is Enabled
-|
-*/
-$boot->AjaxSystem();
 
 /*
 |--------------------------------------------------------------------------

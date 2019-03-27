@@ -68,7 +68,7 @@
 |--------------------------------------------------------------------------
 |
 | Get the time in microtime format for you to measure the awesomeness by
-| Biurad framework.
+| Damn Stupid Simple framework.
 |
 */
 define('BR_START', microtime(true));
@@ -83,7 +83,6 @@ define('BR_START', microtime(true));
 |
 */
 define('BR_PATH', realpath(dirname(__FILE__)) .'/');
-
 
 /*
 |--------------------------------------------------------------------------
