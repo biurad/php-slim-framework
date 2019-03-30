@@ -27,7 +27,7 @@
     "prefer-stable": true,
     "require": {
         "php": ">=5.6.0",
-        "biurad/slim": "^1.1",
+        "biurad/slim": "1.1.*",
         "cartalyst/sentinel": "2.0.*",
         "doctrine/dbal": "^2.9",
         "eftec/documentstoreone": "^1.8",
