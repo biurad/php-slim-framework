@@ -30,7 +30,9 @@ TimeTrackr::init();
 |
 */
 $app = new App;
-$app->ajax_check(false);
+//$app->ajax_check(false);
+$db = new Rlis\RadeBase\RadeBaseManager;
+$cache = new Radion\Cache;
 
 /*
 |--------------------------------------------------------------------------
@@ -41,7 +43,7 @@ $app->ajax_check(false);
 |
 */
 $app->link('database', Database::connect());
-
+$db->open();
 
 /*
 |--------------------------------------------------------------------------
@@ -53,6 +55,9 @@ $app->link('database', Database::connect());
 |
 */
 $app->link('cache', Cache::init());
+if (is_dir($cache->cachebase())) {
+    $cache->OpenCacheDir();
+}
 
 /*
 |--------------------------------------------------------------------------

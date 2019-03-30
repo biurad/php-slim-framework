@@ -1,20 +1,19 @@
 <?php
 namespace Rlis\RadeBase;
 
-use DateTime;
-use mysqli_result;
-use Radion\ConfigManager as Config;
-use Radion\ExceptionManager;
-
+use \DateTime;
+use \mysqli_result;
+use Radion\Debugger;
+use Radion\Config;
 
 /**
- * Class RadeBase
+ * Class RadeBaseManager
  * This class wrappes MySQLi but it could be used for another framework/library.
  * @version 3.24 20190206
- * @package RAdeBase
+ * @package RadeBaseManager
  * @author BiuStudios
  * @copyright (c) Jorge Castro C. MIT License 
- * @see https://github.com/biustudios/RadeBase
+ * @see https://github.com/biustudios/RadeBaseManager
  */
 class RadeBaseManager
 {
@@ -33,7 +32,7 @@ class RadeBaseManager
 	/** @var bool It is true if the database is connected otherwise,it's false */
 	var $isOpen=false;
 	/** @var bool If true (default), then it throws an error if happens an error. If false, then the execution continues */
-	var $throwOnError=true;
+    var $throwOnError=true;
 
 	/** @var  \mysqli */
 	var $conn1;
@@ -55,7 +54,7 @@ class RadeBaseManager
 	/** @var string full filename of the log file. If it's empty then it doesn't store a log file. The log file is limited to 1mb */
 	var $logFile = "";
 	/** @var int 0=no log (but error), 1=normal,2=verbose */
-	public $logLevel=0;
+	public $logLevel=2;
 
 	/** @var string last query executed */
 	var $lastQuery;
@@ -105,7 +104,7 @@ class RadeBaseManager
 	//</editor-fold>
 
 	/**
-	 * RadeBase constructor.  It doesn't connect to the database.
+	 * RadeBaseManager constructor.  It doesn't connect to the database.
 	 * @param string $server server ip. Ex. 127.0.0.1
 	 * @param string $user Ex. root
 	 * @param string $pwd Ex. 12345
@@ -113,26 +112,26 @@ class RadeBaseManager
 	 * @param string $logFile Optional  log file. Example c:\\temp\log.log
 	 * @param string $charset Example utf8mb4
 	 * @param int $nodeId It is the id of the node (server). It is used for sequence. Up to 4096
-	 * @see RadeBase::connect()
+	 * @see RadeBaseManager::connect()
 	 */
 	public function __construct($server = '', $user = '', $pwd = '', $db = '', $logFile = "",$charset='',$nodeId=1)
 	{
 		$radeconfig = [
-			'server'        =>  Config::_get('database','host'),
-			'user'          =>  Config::_get('database','username'),
-			'pwd'           =>  Config::_get('database','password'),
-			'db'            =>  Config::_get('database','database'),
-			'charset'       =>  Config::_get('database','charset')
+			'server'        =>  Config::get('database','host'),
+			'user'          =>  Config::get('database','username'),
+			'pwd'           =>  Config::get('database','password'),
+			'db'            =>  Config::get('database','database'),
+			'charset'       =>  Config::get('database','charset')
 	
-	];
+	    ];
 
 		$this->server = $radeconfig['server'];
 		$this->user = $radeconfig['user'];
 		$this->pwd = $radeconfig['pwd'];
 		$this->db = $radeconfig['db'];
-		$this->logFile = BR_PATH.'Resources/'.Config::_get('theme','storage_path').'/logs/temp';
+		$this->logFile = BR_PATH.'Resources/'.Config::get('theme','storage_path').'/logs/temp';
 		$this->charset=$radeconfig['charset'];
-		$this->nodeId=$nodeId;
+        $this->nodeId=$nodeId;
 	}
 
 	/**
@@ -144,7 +143,7 @@ class RadeBaseManager
 		if (!$this->isOpen) return;
 		$this->db=$dbName;
 		$this->conn1->select_db($dbName);
-	}
+    }
 
 	/**
 	 * It sets the charset of the database.
@@ -170,12 +169,12 @@ class RadeBaseManager
 	/**
 	 * Connects to the database.
 	 * @param bool $failIfConnected  true=it throw an error if it's connected, otherwise it does nothing
-	 * @throws ExceptionManager
-	 * @test ExceptionManager this(false)
+	 * @throws Debugger
+	 * @test Debugger this(false)
 	 */
 	public function connect($failIfConnected=true)
 	{
-		if(Config::_get('database','enabled') === true ) {
+		if(Config::get('database','enabled') === true ) {
 			mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 			if ($this->isOpen) {
 				if (!$failIfConnected) return; // it's already connected.
@@ -190,7 +189,7 @@ class RadeBaseManager
 					$this->setCharset($this->charset);
 				}
 				$this->isOpen=true;
-			} catch (ExceptionManager $ex) {
+			} catch (Debugger $ex) {
 				$this->isOpen=false;
 				$this->throwError("Failed to connect to MySQL:\t" . $ex->getMessage());
 			}
@@ -201,16 +200,18 @@ class RadeBaseManager
 			}
 		}
 		else {
-			Debugger::display('wrong','Hmmmmm!','Database Connection is Missing, Please Fix');
+            header('HTTP/1.1 503 Service Unavailable.', TRUE, 503);
+            Debugger::display('wrong','Hmmmmm!','Database Connection is Missing, Please Fix');
+            exit(1);
 		}
 	}
 
 	/**
-	 * Alias of RadeBase::connect()
+	 * Alias of RadeBaseManager::connect()
 	 * @param bool $failIfConnected
-	 * @see RadeBase::connect()
-	 * @throws ExceptionManager
-	 * @test ExceptionManager this(false)
+	 * @see RadeBaseManager::connect()
+	 * @throws Debugger
+	 * @test Debugger this(false)
 	 */
 	public function open($failIfConnected=true) {
 		$this->connect($failIfConnected);
@@ -244,7 +245,7 @@ class RadeBaseManager
 	 * @param $listSql
 	 * @param bool $continueOnError
 	 * @return bool
-	 * @throws ExceptionManager
+	 * @throws Debugger
 	 */
 	public function runMultipleRawQuery($listSql, $continueOnError = false)
 	{
@@ -281,7 +282,7 @@ class RadeBaseManager
 	 * It returns the next sequence.
 	 * @param bool $asFloat
 	 * @return string . Example string(19) "3639032938181434317"
-	 * @throws ExceptionManager
+	 * @throws Debugger
 	 */
 	public function getSequence($asFloat=false) {
 		$sql="select next_{$this->tableSequence}({$this->nodeId}) id";
@@ -294,7 +295,7 @@ class RadeBaseManager
 
 	/**
 	 * Create a table for a sequence
-	 * @throws ExceptionManager
+	 * @throws Debugger
 	 */
 	public function createSequence() {
 		$sql="CREATE TABLE `{$this->tableSequence}` (
@@ -329,7 +330,7 @@ class RadeBaseManager
 	 * @param int $flag MYSQLI_TRANS_START_READ_ONLY,MYSQLI_TRANS_START_READ_WRITE,MYSQLI_TRANS_START_WITH_CONSISTENT_SNAPSHOT
 	 * @return bool
 	 * @test equals true,this()
-	 * @posttest execution $this->RadeBase->commit();
+	 * @posttest execution $this->RadeBaseManager->commit();
 	 * @example examples/testdb.php 92,4
 	 */
 	public function startTransaction($flag = MYSQLI_TRANS_START_READ_WRITE)
@@ -344,7 +345,7 @@ class RadeBaseManager
 	 * Commit and close a transaction
 	 * @param bool $throw
 	 * @return bool
-	 * @throws ExceptionManager
+	 * @throws Debugger
 	 * @test equals false,(false),'transaction is not open'
 	 */
 	public function commit($throw=true)
@@ -359,7 +360,7 @@ class RadeBaseManager
 	 * Rollback and close a transaction
 	 * @param bool $throw
 	 * @return bool
-	 * @throws ExceptionManager
+	 * @throws Debugger
 	 * @test equals false,(false),'transaction is not open'
 	 */
 	public function rollback($throw=true)
@@ -384,7 +385,7 @@ class RadeBaseManager
 	{
 		// 31/01/2016 20:20:00 --> 2016-01-31 00:00
 		if ($date == null) {
-			return RadeBase::$dateEpoch;
+			return RadeBaseManager::$dateEpoch;
 		}
 		if ($date->format("u")!='000000') {
 			return $date->format('Y-m-d H:i:s.u');	
@@ -403,12 +404,12 @@ class RadeBaseManager
 	{
 		// 31/01/2016 20:20:00 --> 2016-01-31 00:00
 		if ($dateNum == null) {
-			return RadeBase::$dateEpoch;
+			return RadeBaseManager::$dateEpoch;
 		}
 		try {
 			$date2 = new DateTime(date("Y-m-d H:i:s.u", $dateNum));
-		} catch (ExceptionManager $e) {
-			return RadeBase::$dateEpoch;
+		} catch (Debugger $e) {
+			return RadeBaseManager::$dateEpoch;
 		}
 		return $date2->format('Y-m-d H:i:s.u');
 	}
@@ -424,8 +425,8 @@ class RadeBaseManager
 		// 3  2016-01-31 00:00:00 -> 01/01/2016 00:00:00
 		// mysql always returns the date/datetime/timestmamp in ansi format.
 		if ($sqlField === "" || $sqlField===null) {
-			if (RadeBase::$dateEpoch===null) return null;
-			return DateTime::createFromFormat('Y-m-d H:i:s.u',RadeBase::$dateEpoch);
+			if (RadeBaseManager::$dateEpoch===null) return null;
+			return DateTime::createFromFormat('Y-m-d H:i:s.u',RadeBaseManager::$dateEpoch);
 		}
 		if (strpos($sqlField, '.')) {
 			// with date with time and microseconds
@@ -486,8 +487,8 @@ class RadeBaseManager
 	 * @param bool $hasTime
 	 * @param bool $hasMicroseconds
 	 * @return string
-	 * @see RadeBase::$dateTimeFormat
-	 * @throws ExceptionManager
+	 * @see RadeBaseManager::$dateTimeFormat
+	 * @throws Debugger
 	 */
 	public static function dateTextNow($hasTime=true,$hasMicroseconds=false)
 	{
@@ -504,8 +505,8 @@ class RadeBaseManager
 	//<editor-fold desc="Query Builder functions" defaultstate="collapsed" >
 	/**
 	 * @param string|array $sql
-	 * @return RadeBase
-	 * @test InstanceOf RadeBase::class,this('select 1 from DUAL')
+	 * @return RadeBaseManager
+	 * @test InstanceOf RadeBaseManager::class,this('select 1 from DUAL')
 	 */
 	public function select($sql)
 	{
@@ -520,8 +521,8 @@ class RadeBaseManager
 	/**
 	 * It generates an inner join
 	 * @param string $sql Example "tablejoin on table1.field=tablejoin.field"
-	 * @return RadeBase
-	 * @test InstanceOf RadeBase::class,this('tablejoin on t1.field=t2.field')
+	 * @return RadeBaseManager
+	 * @test InstanceOf RadeBaseManager::class,this('tablejoin on t1.field=t2.field')
 	 */
 	public function join($sql)
 	{
@@ -533,7 +534,7 @@ class RadeBaseManager
 	/**
 	 * Macro of join.
 	 * @param $sql
-	 * @return RadeBase
+	 * @return RadeBaseManager
 	 */
 	public function innerjoin($sql)
 	{
@@ -543,8 +544,8 @@ class RadeBaseManager
 
 	/**
 	 * @param $sql
-	 * @return RadeBase
-	 * @test InstanceOf RadeBase::class,this('table t1')
+	 * @return RadeBaseManager
+	 * @test InstanceOf RadeBaseManager::class,this('table t1')
 	 */
 	public function from($sql)
 	{
@@ -554,8 +555,8 @@ class RadeBaseManager
 
 	/**
 	 * @param $sql
-	 * @return RadeBase
-	 * @test InstanceOf RadeBase::class,this('table2 on table1.t1=table2.t2')
+	 * @return RadeBaseManager
+	 * @test InstanceOf RadeBaseManager::class,this('table2 on table1.t1=table2.t2')
 	 */
 	public function left($sql)
 	{
@@ -566,8 +567,8 @@ class RadeBaseManager
 
 	/**
 	 * @param $sql
-	 * @return RadeBase
-	 * @test InstanceOf RadeBase::class,this('table2 on table1.t1=table2.t2')
+	 * @return RadeBaseManager
+	 * @test InstanceOf RadeBaseManager::class,this('table2 on table1.t1=table2.t2')
 	 */
 	public function right($sql)
 	{
@@ -588,9 +589,9 @@ class RadeBaseManager
 	 * where('field=?,field2=?',['i',20,'s','hello'])<br>
 	 * @param string|array $sql
 	 * @param array|mixed $param
-	 * @return RadeBase
+	 * @return RadeBaseManager
 	 * @see http://php.net/manual/en/mysqli-stmt.bind-param.php for types
-	 * @test InstanceOf RadeBase::class,this('field1=?,field2=?',['i',20,'s','hello'])
+	 * @test InstanceOf RadeBaseManager::class,this('field1=?,field2=?',['i',20,'s','hello'])
 	 */
 	public function where($sql, $param = self::NULL)
 	{
@@ -635,9 +636,9 @@ class RadeBaseManager
 	/**
 	 * @param string|array $sqlOrArray
 	 * @param array|mixed $param
-	 * @return RadeBase
-	 * @throws ExceptionManager
-	 * @test InstanceOf RadeBase::class,this('field1=?,field2=?',['i',20,'s','hello'])
+	 * @return RadeBaseManager
+	 * @throws Debugger
+	 * @test InstanceOf RadeBaseManager::class,this('field1=?,field2=?',['i',20,'s','hello'])
 	 */
 	public function set($sqlOrArray, $param = self::NULL )
 	{
@@ -677,8 +678,8 @@ class RadeBaseManager
 	}
 	/**
 	 * @param $sql
-	 * @return RadeBase
-	 * @test InstanceOf RadeBase::class,this('fieldgroup')
+	 * @return RadeBaseManager
+	 * @test InstanceOf RadeBaseManager::class,this('fieldgroup')
 	 */
 	public function group($sql)
 	{
@@ -689,9 +690,9 @@ class RadeBaseManager
 	/**
 	 * @param $sql
 	 * @param array|mixed $param
-	 * @return RadeBase
-	 * @test InstanceOf RadeBase::class,this('field1=?,field2=?',['i',20,'s','hello'])
-	 * * @test InstanceOf RadeBase::class,this('field1=?','hello')
+	 * @return RadeBaseManager
+	 * @test InstanceOf RadeBaseManager::class,this('field1=?,field2=?',['i',20,'s','hello'])
+	 * * @test InstanceOf RadeBaseManager::class,this('field1=?','hello')
 	 */
 	public function having($sql, $param = self::NULL)
 	{
@@ -713,8 +714,8 @@ class RadeBaseManager
 
 	/**
 	 * @param $sql
-	 * @return RadeBase
-	 * @test InstanceOf RadeBase::class,this('name desc')
+	 * @return RadeBaseManager
+	 * @test InstanceOf RadeBaseManager::class,this('name desc')
 	 */
 	public function order($sql)
 	{
@@ -724,8 +725,8 @@ class RadeBaseManager
 
 	/**
 	 * @param $sql
-	 * @return RadeBase
-	 * @test InstanceOf RadeBase::class,this('1,10')
+	 * @return RadeBaseManager
+	 * @test InstanceOf RadeBaseManager::class,this('1,10')
 	 */
 	public function limit($sql)
 	{
@@ -735,8 +736,8 @@ class RadeBaseManager
 
 	/**
 	 * @param $sql
-	 * @return RadeBase
-	 * @test InstanceOf RadeBase::class,this()
+	 * @return RadeBaseManager
+	 * @test InstanceOf RadeBaseManager::class,this()
 	 */
 	public function distinct($sql = 'distinct')
 	{
@@ -747,7 +748,7 @@ class RadeBaseManager
 	/**
 	 * It returns an array of rows.
 	 * @return array|bool
-	 * @throws ExceptionManager
+	 * @throws Debugger
 	 */
 	public function toList()
 	{
@@ -759,7 +760,7 @@ class RadeBaseManager
 	 * Run builder query and returns a mysqli_result.
 	 * @param bool $returnArray true=return an array. False return a mysqli_result
 	 * @return bool|\mysqli_result
-	 * @throws ExceptionManager
+	 * @throws Debugger
 	 */
 	public function runGen($returnArray = true)
 	{
@@ -797,7 +798,7 @@ class RadeBaseManager
 	/**
 	 * @param bool $genSqlFields
 	 * @return $this
-	 * @test InstanceOf RadeBase::class,this(true)
+	 * @test InstanceOf RadeBaseManager::class,this(true)
 	 */
 	public function generateSqlFields($genSqlFields=true) {
 		$this->genSqlFields=$genSqlFields;
@@ -845,7 +846,7 @@ class RadeBaseManager
 	/**
 	 * @param $query string
 	 * @return \mysqli_stmt returns the statement if correct otherwise null
-	 * @throws ExceptionManager
+	 * @throws Debugger
 	 */
 	public function prepare($query)
 	{
@@ -864,7 +865,7 @@ class RadeBaseManager
 
 		try {
 			$stmt = $this->conn1->prepare($query);
-		} catch (ExceptionManager $ex) {
+		} catch (Debugger $ex) {
 			$stmt=false;
 			$this->throwError("Failed to prepare:".$ex->getMessage());
 		}
@@ -878,21 +879,21 @@ class RadeBaseManager
 	 * Run a prepared statement.
 	 * @param $stmt \mysqli_stmt
 	 * @return bool returns true if the operation is correct, otherwise false
-	 * @throws ExceptionManager
-	 * @test equals true,$this->RadeBase->runQuery($this->RadeBase->prepare('select 1 from dual'))
-	 * @test equals [1=>1],$this->RadeBase->select('1')->from('dual')->first(),'it must runs'
+	 * @throws Debugger
+	 * @test equals true,$this->RadeBaseManager->runQuery($this->RadeBaseManager->prepare('select 1 from dual'))
+	 * @test equals [1=>1],$this->RadeBaseManager->select('1')->from('dual')->first(),'it must runs'
 	 */
 	public function runQuery($stmt)
 	{
 		if (!$this->isOpen) { $this->throwError("It's not connected to the database"); return null; }
 		try {
 			$r = $stmt->execute();
-		} catch (ExceptionManager $ex) {
+		} catch (Debugger $ex) {
 			$r=false;
 			$this->throwError("Failed to run query\t" . $this->lastQuery . " Cause:" . $ex->getMessage());
 		}
 		if ($r === false) {
-			$this->throwError("ExceptionManager query\t" . $this->lastQuery);
+			$this->throwError("Debugger query\t" . $this->lastQuery);
 		}
 		return true;
 	}
@@ -919,7 +920,7 @@ class RadeBaseManager
 	/**
 	 * It returns a mysqli_result.
 	 * @return \mysqli_result
-	 * @throws ExceptionManager
+	 * @throws Debugger
 	 */
 	public function toResult()
 	{
@@ -929,7 +930,7 @@ class RadeBaseManager
 	/**
 	 * It returns the first row.  If there is not row then it returns empty.
 	 * @return array|null
-	 * @throws ExceptionManager
+	 * @throws Debugger
 	 */
 	public function first()
 	{
@@ -946,7 +947,7 @@ class RadeBaseManager
 	/**
 	 * Executes the query, and returns the first column of the first row in the result set returned by the query. Additional columns or rows are ignored.
 	 * @return mixed|null
-	 * @throws ExceptionManager
+	 * @throws Debugger
 	 */
 	public function firstScalar()
 	{
@@ -964,7 +965,7 @@ class RadeBaseManager
 	/**
 	 * Returns the last row. It's not recommended. Use instead first() and change the order.
 	 * @return array|null
-	 * @throws ExceptionManager
+	 * @throws Debugger
 	 */
 	public function last()
 	{
@@ -985,7 +986,7 @@ class RadeBaseManager
 	 * @param array|null $param
 	 * @param bool $returnArray
 	 * @return bool|\mysqli_result|array an array of associative or a mysqli_result
-	 * @throws ExceptionManager
+	 * @throws Debugger
 	 * @test equals [0=>[1=>1]],this('select 1',null,true)
 	 */
 	public function runRawQuery($rawSql, $param = null, $returnArray = true)
@@ -1006,9 +1007,9 @@ class RadeBaseManager
 			// the "where" chain doesn't have parameters.
 			try {
 				$rows = $this->conn1->query($rawSql);
-			} catch (ExceptionManager $ex) {
+			} catch (Debugger $ex) {
 				$rows=false;
-				$this->throwError("ExceptionManager raw\t" . $rawSql);
+				$this->throwError("Debugger raw\t" . $rawSql);
 			}
 			if ($rows === false) {
 				$this->throwError("Unable to run raw query\t" . $rawSql);
@@ -1073,7 +1074,7 @@ class RadeBaseManager
 	 * @param string[] $tableDefWhere
 	 * @param string[]|int $valueWhere
 	 * @return mixed
-	 * @throws ExceptionManager
+	 * @throws Debugger
 	 */
 	public function update($table=null, $tableDef=null, $value=self::NULL, $tableDefWhere=null, $valueWhere=self::NULL)
 	{
@@ -1129,7 +1130,7 @@ class RadeBaseManager
 	 * @param string[] $tableDef
 	 * @param string[]|int $value
 	 * @return mixed
-	 * @throws ExceptionManager
+	 * @throws Debugger
 	 */
 	public function insert($table=null, $tableDef=null, $value = self::NULL)
 	{
@@ -1177,7 +1178,7 @@ class RadeBaseManager
 	 * @param string[] $tableDefWhere
 	 * @param string[]|int $valueWhere
 	 * @return mixed
-	 * @throws ExceptionManager
+	 * @throws Debugger
 	 */
 	public function delete($table=null, $tableDefWhere=null, $valueWhere=self::NULL)
 	{
@@ -1352,7 +1353,7 @@ class RadeBaseManager
 				break;
 			case (is_object($v) && get_class($v)=='DateTime'):
 				$vt='s';
-				$v=RadeBase::dateTimePHP2Sql($v);
+				$v=RadeBaseManager::dateTimePHP2Sql($v);
 				break;
 			default:
 				$vt='s';
@@ -1370,7 +1371,7 @@ class RadeBaseManager
 	 * @param string $password
 	 * @param string $salt
 	 * @param string $encMethod . Example : AES-128-CTR See http://php.net/manual/en/function.openssl-get-cipher-methods.php
-	 * @throws ExceptionManager
+	 * @throws Debugger
 	 * @test void this('123','somesalt','AES-128-CTR')
 	 */
 	public function setEncryption($password, $salt, $encMethod)
@@ -1432,7 +1433,7 @@ class RadeBaseManager
 	/**
 	 * Write a log line for debug, clean the command chain then throw an error (if throwOnError==true)
 	 * @param $txt
-	 * @throws ExceptionManager
+	 * @throws Debugger
 	 */
 	function throwError($txt)
 	{
@@ -1444,12 +1445,12 @@ class RadeBaseManager
 			$this->debugFile($txt,'ERROR');
 		}
 
-		if ($this->throwOnError) throw new ExceptionManager($txt);
+		if ($this->throwOnError) throw new Debugger($txt);
 	}
 	/**
 	 * Write a log line for debug, clean the command chain then throw an error (if throwOnError==true)
 	 * @param $txt
-	 * @throws ExceptionManager
+	 * @throws Debugger
 	 */
 	function storeInfo($txt)
 	{

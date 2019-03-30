@@ -8,6 +8,7 @@ return [
      * use 'DEFAULT' if you would like to write your views in the native or oob php.
      * use 'RADEVIEW' if you would like to write your views like Lavarel Blade.
      * use 'TWIG' if you would like to write your views in TWIG view engine.
+     * use 'HTML' if you would just like to view html pages only using the framework
      */
     'Template' => 'RADEVIEW',
 
@@ -40,5 +41,10 @@ return [
      * Configuraation for: Theme Style
      * This is the name of your default style for your views.
      */
-    'theme_style' => THEME_NAME
+    'theme_style' => THEME_NAME,
+
+    // Output compression
+    // Set true and see what output in your browser developer area.
+    // Set false to disable compression
+    'compression' => true
 ];

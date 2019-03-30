@@ -32,4 +32,5 @@ Radion\Config::setEnv();
 | configuration (located at config/env.php). 
 |
 */
-Radion\Debugger::start();
+$debug = new Radion\Debugger;
+$debug->start();

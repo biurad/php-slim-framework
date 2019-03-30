@@ -1,0 +1,13 @@
+<script type="text/javascript" src="assets/default/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="assets/default/js/pages-switcher.js"></script>
+<script type="text/javascript" src="assets/default/js/imagesloaded.pkgd.min.js"></script>
+<script type="text/javascript" src="assets/default/js/validator.js"></script>
+<script type="text/javascript" src="assets/default/js/jquery.shuffle.min.js"></script>
+<script type="text/javascript" src="assets/default/js/masonry.pkgd.min.js"></script>
+<script type="text/javascript" src="assets/default/js/owl.carousel.min.js"></script>
+<script type="text/javascript" src="assets/default/js/jquery.magnific-popup.min.js"></script>
+<script type="text/javascript" src="assets/default/js/jquery.hoverdir.js"></script>
+<!--<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=YOUR-API-KEY"></script>-->
+<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js"></script>
+<script type="text/javascript" src="assets/default/js/jquery.googlemap.js"></script>
+<script type="text/javascript" src="assets/default/js/main.js"></script> 

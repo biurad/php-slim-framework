@@ -2,11 +2,18 @@
 
 namespace Rlis\RadeView;
 
-use ArrayAccess;
 use Closure;
 use Countable;
-use Radion\ExceptionManager;
+use ArrayAccess;
+use Radion\Config;
+use Radion\Debugger;
 use InvalidArgumentException;
+//use \Rlis\RadeView\RadeViewManagerHtmlBootstrap;
+//use \Rlis\RadeView\RadeViewManagerCustom;
+//use \Rlis\RadeView\RadeViewManagerHtml;
+//use \Rlis\RadeView\RadeViewManagerCache;
+//use \Rlis\RadeView\RadeViewManagerCacheRedis;
+//use \Rlis\RadeView\RadeViewManagerLogic;
 
 /**
  * Class RadeView
@@ -168,7 +175,7 @@ class RadeViewManager
      * @param $view
      * @param array $variables
      * @return string
-     * @throws ExceptionManager
+     * @throws Debugger
      */
     public function runChild($view, $variables = [])
     {
@@ -288,7 +295,7 @@ class RadeViewManager
      * @param $view
      * @param array $variables
      * @return string
-     * @throws ExceptionManager
+     * @throws Debugger
      */
     public function run($view, $variables = [])
     {
@@ -306,7 +313,7 @@ class RadeViewManager
      * @param string HTML to parse
      * @param array $data
      * @return string
-     * @throws ExceptionManager
+     * @throws Debugger
      */
     public function runString($string, $data)
     {
@@ -320,18 +327,18 @@ class RadeViewManager
 
         try {
             @eval('?'.'>'.$php);
-        } catch (ExceptionManager $e) {
+        } catch (Debugger $e) {
             while (ob_get_level() > $obLevel) ob_end_clean();
             throw $e;
         } catch (\ParseError $e) { // PHP 7
             while (ob_get_level() > $obLevel) ob_end_clean();
-            throw new ExceptionManager($e->getMessage(),$e->getCode());
+            throw new Debugger($e->getMessage(),$e->getCode());
         }
 
         $lastError = error_get_last(); // PHP 5.6
         if ($previousError != $lastError && $lastError["type"] == E_PARSE) {
             while (ob_get_level() > $obLevel) ob_end_clean();
-            throw new ExceptionManager($lastError["message"], $lastError["type"]);
+            throw new Debugger($lastError["message"], $lastError["type"]);
         }
 
         return ob_get_clean();
@@ -346,7 +353,7 @@ class RadeViewManager
      * @param bool $isParent
      * @param bool $runFast if true then the code is not compiled neither checked and it runs directly the compiled version.
      * @return string
-     * @throws ExceptionManager
+     * @throws Debugger
      */
     private function runInternal($view, $variables = [], $forced = false, $isParent = true, $runFast = false)
     {
@@ -375,8 +382,8 @@ class RadeViewManager
      * Compile the view at the given path.
      * @param string $templateName The name of the template. Example folder.template
      * @param bool $forced If the compilation will be forced (always compile) or not.
-     * @return boolean True if the operation was correct, or false (if not ExceptionManager) if it fails.
-     * @throws ExceptionManager
+     * @return boolean True if the operation was correct, or false (if not Debugger) if it fails.
+     * @throws Debugger
      */
     public function compile($templateName = null, $forced = false)
     {
@@ -457,7 +464,7 @@ class RadeViewManager
     }
     protected function compilecsrf()
     {
-        return $this->phpTag." echo '<input type=\"hidden\" name=\"_token\" value=\"".$this->csrf_token."\"/>';?>";
+        return $this->phpTag." echo '<input type=\"hidden\" name=\"_token\" value=\"".$this-> csrf_token()."\"/>';?>";
     }
 
     protected function compileDd($expression)
@@ -560,7 +567,18 @@ class RadeViewManager
             $result = ltrim($result, PHP_EOL)
                 .PHP_EOL.implode(PHP_EOL, array_reverse($this->footer));
         }
-        return $result;
+        // Compresss output
+        if (Config::get('theme','compression') === true) {
+            $results = \Rlis\RadeMinify\RadeMinify::html($result);
+            return $results;
+        } else if (Config::get('theme','compression') === false) {
+            return $result;
+        } else {
+            header('HTTP/1.1 503 Service Unavailable.', true, 503);
+            Debugger::display('wrong', 'Compression Notice', 'The application compression was not set correctly');
+            exit(1);
+        }
+        //return $result;
     }
 
     /**
@@ -1223,7 +1241,7 @@ class RadeViewManager
      * It uses more disk space but it decreases the number of includes<br>
      * @param $expression
      * @return string
-     * @throws ExceptionManager
+     * @throws Debugger
      */
     protected function compileIncludeFast($expression)
     {
@@ -1575,14 +1593,14 @@ class RadeViewManager
      * @param string $name
      * @param $args[]
      * @return mixed
-     * @throws ExceptionManager
+     * @throws Debugger
      */
     public function __call($name, $args)
     {
         if ($name=='if') {
             return $this->_if(@$args[0], @$args[1]);
         }
-        throw new ExceptionManager("function $name is not defined<br>");
+        throw new Debugger("function $name is not defined<br>");
     }
 
     /**
@@ -1602,7 +1620,7 @@ class RadeViewManager
      * @param string $view name of the view
      * @param array $value arrays of values
      * @return string
-     * @throws ExceptionManager
+     * @throws Debugger
      */
     public function includeWhen($bool = false, $view = '', $value = [])
     {
@@ -1617,7 +1635,7 @@ class RadeViewManager
      * @param array $views array of views
      * @param array $value
      * @return string
-     * @throws ExceptionManager
+     * @throws Debugger
      */
     public function includeFirst($views = [], $value = [])
     {
@@ -1684,7 +1702,7 @@ class RadeViewManager
     public function regenerateToken() {
         try {
             $this->csrf_token = bin2hex(random_bytes(10));
-        } catch (ExceptionManager $e) {
+        } catch (Debugger $e) {
             $this->csrf_token="123456789012345678901234567890"; // unable to generates a random token.
         }
         @$_SESSION["_token"]=$this->csrf_token."|".$this->ipClient();
@@ -1765,7 +1783,7 @@ class RadeViewManager
             if ($method2 === 'compileEscapedEchos') {
                 return 1;
             }
-            throw new ExceptionManager('Method not defined');
+            throw new Debugger('Method not defined');
         });
         return $methods;
     }
@@ -2132,7 +2150,7 @@ class RadeViewManager
      * @param $compiledFile
      * @param $variables
      * @return string
-     * @throws ExceptionManager
+     * @throws Debugger
      */
     protected function evaluatePath($compiledFile, $variables)
     {
@@ -2140,23 +2158,23 @@ class RadeViewManager
         extract($variables);
         // We'll evaluate the contents of the view inside a try/catch block so we can
         // flush out any stray output that might get out before an error occurs or
-        // an ExceptionManager is thrown. This prevents any partial views from leaking.
+        // an Debugger is thrown. This prevents any partial views from leaking.
         try {
             /** @noinspection PhpIncludeInspection */
             include $compiledFile;
-        } catch (\ExceptionManager $e) {
-            $this->handleViewExceptionManager($e);
+        } catch (\Debugger $e) {
+            $this->handleViewDebugger($e);
         }
         return ltrim(ob_get_clean());
     }
 
     /**
-     * Handle a view ExceptionManager.
-     * @param  \ExceptionManager $e
+     * Handle a view Debugger.
+     * @param  \Debugger $e
      * @return void
      * @throws $e
      */
-    protected function handleViewExceptionManager($e)
+    protected function handleViewDebugger($e)
     {
         ob_get_clean();
         throw $e;
@@ -2406,7 +2424,7 @@ class RadeViewManager
      * @param  string $iterator
      * @param  string $empty
      * @return string
-     * @throws ExceptionManager
+     * @throws Debugger
      */
     public function renderEach($view, $data, $iterator, $empty = 'raw|')
     {
@@ -2443,7 +2461,7 @@ class RadeViewManager
     public function showError($id, $text, $critic = false)
     {
         ob_get_clean();
-        ExceptionManager::display('simple',$id.' error',$text);
+        Debugger::display('simple',$id.' error',$text);
         if ($critic) {
             die(1);
         }
@@ -2470,7 +2488,7 @@ class RadeViewManager
     /**
      * Render the current component.
      * @return string
-     * @throws ExceptionManager
+     * @throws Debugger
      */
     public function renderComponent()
     {
