@@ -3,7 +3,7 @@
 use Rlis\RadeBase\RadeBaseManager;
 
 /**
- * Session class
+ * Session class.
  *
  * handles the session stuff. creates session when no one exists, sets and gets values, and closes the session
  * properly (=logout). Not to forget the check if the user is logged in or not.
@@ -11,7 +11,7 @@ use Rlis\RadeBase\RadeBaseManager;
 class Session
 {
     /**
-     * starts the session
+     * starts the session.
      */
     public static function init()
     {
@@ -22,9 +22,9 @@ class Session
     }
 
     /**
-     * sets a specific value to a specific key of the session
+     * sets a specific value to a specific key of the session.
      *
-     * @param mixed $key key
+     * @param mixed $key   key
      * @param mixed $value value
      */
     public static function set($key, $value)
@@ -33,9 +33,10 @@ class Session
     }
 
     /**
-     * gets/returns the value of a specific key of the session
+     * gets/returns the value of a specific key of the session.
      *
      * @param mixed $key Usually a string, right ?
+     *
      * @return mixed the key's value or nothing
      */
     public static function get($key)
@@ -50,7 +51,7 @@ class Session
 
     /**
      * adds a value as a new array element to the key.
-     * useful for collecting error messages etc
+     * useful for collecting error messages etc.
      *
      * @param mixed $key
      * @param mixed $value
@@ -61,7 +62,7 @@ class Session
     }
 
     /**
-     * deletes the session (= logs the user out)
+     * deletes the session (= logs the user out).
      */
     public static function destroy()
     {
@@ -69,25 +70,25 @@ class Session
     }
 
     /**
-     * update session id in database
+     * update session id in database.
      *
-     * @access public
      * @static static method
-     * @param  string $userId
-     * @param  string $sessionId
+     *
+     * @param string $userId
+     * @param string $sessionId
      */
     public static function updateSessionId($userId, $sessionId = null)
     {
-        $db = new RadeBaseManager;
+        $db = new RadeBaseManager();
         $database = $db->open();
-        $sql = "UPDATE users SET session_id = :session_id WHERE user_id = :user_id";
+        $sql = 'UPDATE users SET session_id = :session_id WHERE user_id = :user_id';
 
         $query = $database->prepare($sql);
-        $query->execute(array(':session_id' => $sessionId, ":user_id" => $userId));
+        $query->execute([':session_id' => $sessionId, ':user_id' => $userId]);
     }
 
     /**
-     * checks for session concurrency
+     * checks for session concurrency.
      *
      * This is done as the following:
      * UserA logs in with his session id('123') and it will be stored in the database.
@@ -98,25 +99,25 @@ class Session
      * You then check the session_id() against the last one stored in the database('456'),
      * If they don't match then log both of them out.
      *
-     * @access public
      * @static static method
+     *
      * @return bool
+     *
      * @see Session::updateSessionId()
      * @see http://stackoverflow.com/questions/6126285/php-stop-concurrent-user-logins
      */
     public static function isConcurrentSessionExists()
     {
         $session_id = session_id();
-        $userId     = self::get('user_id');
+        $userId = self::get('user_id');
 
         if (isset($userId) && isset($session_id)) {
-
-            $db = new RadeBaseManager;
+            $db = new RadeBaseManager();
             $database = $db->open();
-            $sql = "SELECT session_id FROM users WHERE user_id = :user_id LIMIT 1";
+            $sql = 'SELECT session_id FROM users WHERE user_id = :user_id LIMIT 1';
 
             $query = $database->prepare($sql);
-            $query->execute(array(":user_id" => $userId));
+            $query->execute([':user_id' => $userId]);
 
             $result = $query->fetch();
             $userSessionId = !empty($result) ? $result->session_id : null;
@@ -128,26 +129,28 @@ class Session
     }
 
     /**
-     * Checks if the user is logged in or not
+     * Checks if the user is logged in or not.
      *
      * @return bool user's login status
      */
     public static function userIsLoggedIn()
     {
-        return (self::get('user_logged_in') ? true : false);
+        return self::get('user_logged_in') ? true : false;
     }
 
     /**
-	 * Removes session variable 
-	 * @param string $name
-	 */
-	public function remove($key)
-	{
-		if(isset($_SESSION[$key])){
+     * Removes session variable.
+     *
+     * @param string $name
+     */
+    public function remove($key)
+    {
+        if (isset($_SESSION[$key])) {
             unset($_SESSION[$key]);
+
             return true;
         }
-		
+
         return false;
-	}
+    }
 }

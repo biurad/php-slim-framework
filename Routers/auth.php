@@ -2,7 +2,7 @@
 
 /*
 |--------------------------------------------------------------------------
-| User Login, Signup and Authetication Route Controller 
+| User Login, Signup and Authetication Route Controller
 |--------------------------------------------------------------------------
 |
 | This is to demonstrate using Controller to manage authentication

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Class Filter
+ * Class Filter.
  *
  * This is the place to put filters, usually methods that cleans, sorts and, well, filters stuff.
  */
@@ -17,13 +17,14 @@ class Filter
      * or sending your cookie data (containing your remember-me-token) to somebody else.
      *
      * What is XSS ?
+     *
      * @see http://phpsecurity.readthedocs.org/en/latest/Cross-Site-Scripting-%28XSS%29.html
      *
      * Deeper information:
      * @see https://www.owasp.org/index.php/XSS_Filter_Evasion_Cheat_Sheet
      *
-     * XSSFilter expects a value, checks if the value is a string, and if so, encodes typical script tag chars to 
-     * harmless HTML (you'll see the code, it wil not be interpreted). Then the method checks if the value is an array, 
+     * XSSFilter expects a value, checks if the value is a string, and if so, encodes typical script tag chars to
+     * harmless HTML (you'll see the code, it wil not be interpreted). Then the method checks if the value is an array,
      * or an object and if so, makes sure all its string content is encoded (recursive call on its values).
      * Note that this method uses reference to the assed variable, not a copy, meaning you can use this methods like this:
      *
@@ -32,7 +33,6 @@ class Filter
      *
      * This works like some other popular PHP functions, for example sort().
      * @see http://php.net/manual/en/function.sort.php
-     *
      * @see http://stackoverflow.com/questions/1676897/what-does-it-mean-to-start-a-php-function-with-an-ampersand
      * @see http://php.net/manual/en/language.references.pass.php
      *
@@ -43,11 +43,11 @@ class Filter
      * "'" (single quote) becomes '&#039;' (or &apos;) only when ENT_QUOTES is set.
      * '<' (less than) becomes '&lt;'
      * '>' (greater than) becomes '&gt;'
-     *
      * @see http://www.php.net/manual/en/function.htmlspecialchars.php
      *
      * @param  $value    The value to be filtered
-     * @return mixed    
+     *
+     * @return mixed
      */
     public static function XSSFilter(&$value)
     {
@@ -55,15 +55,16 @@ class Filter
         if (is_string($value)) {
             $value = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 
-            // if argument is an array or an object, 
-            // recursivly filters its content 
-        } else if (is_array($value) || is_object($value)) {
+        // if argument is an array or an object,
+            // recursivly filters its content
+        } elseif (is_array($value) || is_object($value)) {
 
-            /** 
+            /**
              * Make sure the element is passed by reference,
-             * In PHP 7, foreach does not use the internal array pointer. 
-             * In order to be able to directly modify array elements within the loop 
-             * precede $value with &. In that case the value will be assigned by reference. 
+             * In PHP 7, foreach does not use the internal array pointer.
+             * In order to be able to directly modify array elements within the loop
+             * precede $value with &. In that case the value will be assigned by reference.
+             *
              * @see http://php.net/manual/en/control-structures.foreach.php
              */
             foreach ($value as &$valueInValue) {
@@ -81,15 +82,15 @@ class Filter
         $string = self::cleanString($string);
         $string = htmlspecialchars($string, ENT_QUOTES);
         if ($br == true) {
-            $string = str_replace('\r\n', " <br>", $string);
-            $string = str_replace('\n\r', " <br>", $string);
-            $string = str_replace('\r', " <br>", $string);
-            $string = str_replace('\n', " <br>", $string);
+            $string = str_replace('\r\n', ' <br>', $string);
+            $string = str_replace('\n\r', ' <br>', $string);
+            $string = str_replace('\r', ' <br>', $string);
+            $string = str_replace('\n', ' <br>', $string);
         } else {
-            $string = str_replace('\r\n', "", $string);
-            $string = str_replace('\n\r', "", $string);
-            $string = str_replace('\r', "", $string);
-            $string = str_replace('\n', "", $string);
+            $string = str_replace('\r\n', '', $string);
+            $string = str_replace('\n\r', '', $string);
+            $string = str_replace('\r', '', $string);
+            $string = str_replace('\n', '', $string);
         }
         if ($strip == 1) {
             $string = stripslashes($string);
@@ -97,18 +98,18 @@ class Filter
         $string = str_replace('&amp;#', '&#', $string);
         if ($censored_words == 1) {
             global $config;
-            $censored_words = @explode(",", $config['censored_words']);
+            $censored_words = @explode(',', $config['censored_words']);
             foreach ($censored_words as $censored_word) {
                 $censored_word = trim($censored_word);
-                $string        = str_replace($censored_word, '****', $string);
+                $string = str_replace($censored_word, '****', $string);
             }
         }
+
         return $string;
     }
 
-    static function cleanString($string) {
-        return $string = preg_replace("/&#?[a-z0-9]+;/i","", $string); 
+    public static function cleanString($string)
+    {
+        return $string = preg_replace('/&#?[a-z0-9]+;/i', '', $string);
     }
-
-    
 }

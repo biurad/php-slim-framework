@@ -2,12 +2,13 @@
 
 namespace Rlis\RadeView;
 
+use ArrayAccess;
 use Closure;
 use Countable;
-use ArrayAccess;
+use InvalidArgumentException;
 use Radion\Config;
 use Radion\Debugger;
-use InvalidArgumentException;
+
 //use \Rlis\RadeView\RadeViewManagerHtmlBootstrap;
 //use \Rlis\RadeView\RadeViewManagerCustom;
 //use \Rlis\RadeView\RadeViewManagerHtml;
@@ -16,14 +17,14 @@ use InvalidArgumentException;
 //use \Rlis\RadeView\RadeViewManagerLogic;
 
 /**
- * Class RadeView
+ * Class RadeView.
  */
-class RadeViewManager
+class RadeView
 {    //<editor-fold desc="fields">
 
     /** @var array All of the registered extensions. */
     protected $extensions = [];
-    
+
     /** @var array All of the finished, captured sections. */
     protected $sections = [];
     /** @var string The template currently being compiled. For example "folder.template" */
@@ -54,7 +55,7 @@ class RadeViewManager
     /** @var string Get the compiled path for the compiled views. */
     protected $compiledPath;
     /** @var string the extension of the compiled file. */
-    protected $compileExtension='.rade';
+    protected $compileExtension = '.rade';
     /** @var array Custom "directive" dictionary. Those directives run at compile time. */
     protected $customDirectives = [];
     /** @var bool[] Custom directive dictinary. Those directives run at runtime. */
@@ -62,18 +63,17 @@ class RadeViewManager
     /** @var callable Function used for resolving injected classes. */
     protected $injectResolver;
     /** @var array Used for conditional if. */
-    protected $conditions=[];
+    protected $conditions = [];
     /** @var int Unique counter. It's usued for extends */
-    protected $uidCounter=0;
+    protected $uidCounter = 0;
     /** @var string The main url of the system. Don't use $SERVER['HTTP_HOST'] or $SERVER['SERVER_NAME'] unless the value is sanitized is protected */
     protected $baseUrl = '.';
     /** @var string it is a relative path calculated betweeen baseUrl and the current url. Example ../../ */
-    protected $relativePath="";
+    protected $relativePath = '';
     /** @var string[] Dictionary of assets */
     protected $assetDict;
 
-
-    /** @var bool  */
+    /** @var bool */
     protected $isRunFast = false;
     /** @var array Array of opening and closing tags for raw echos. */
     protected $rawTags = ['{@', '@}'];
@@ -118,116 +118,139 @@ class RadeViewManager
     /** @var callable callback of validation. It is used for @canany */
     public $authAnyCallBack;
     /** @var string security token */
-    public $csrf_token="";
+    public $csrf_token = '';
     /**
      * Indicates the compile mode.
      * if the constant RadeView_MODE is define, then it is used instead of this field.
+     *
      * @var int MODE_*
      */
     protected $mode;
     /** @var int RadeView reads if the compiled file has changed. If has changed,then the file is replaced. */
-    const MODE_AUTO=0;
+    const MODE_AUTO = 0;
     /** @var int Then compiled file is always replaced. It's slow and it's useful for development. */
-    const MODE_SLOW=1;
+    const MODE_SLOW = 1;
     /** @var int The compiled file is never replaced. It's fast and it's useful for production. */
-    const MODE_FAST=2;
+    const MODE_FAST = 2;
     /** @var int DEBUG MODE, the file is always compiled and the filename is identifiable. */
-    const MODE_DEBUG=5;
+    const MODE_DEBUG = 5;
 
     //</editor-fold>
 
     //<editor-fold desc="constructor">
+
     /**
      * Bob the constructor.
      * The folder at $compiledPath is created in case it doesn't exist.
+     *
      * @param string|array $templatePath .If null then it uses (caller_folder)/views
-     * @param string $compiledPath .If null then it uses (caller_folder)/compiles
+     * @param string       $compiledPath .If null then it uses (caller_folder)/compiles
      * @param $mode (see setMode)
      */
-    public function __construct($templatePath=null, $compiledPath=null,$mode=0)
+    public function __construct($templatePath = null, $compiledPath = null, $mode = 0)
     {
-        if ($templatePath===null) $templatePath=getcwd(). '/views';
-        if ($compiledPath===null) $compiledPath=getcwd() . '/compiles';
+        if ($templatePath === null) {
+            $templatePath = getcwd().'/views';
+        }
+        if ($compiledPath === null) {
+            $compiledPath = getcwd().'/compiles';
+        }
         $this->templatePath = $templatePath;
         $this->compiledPath = $compiledPath;
         $this->setMode($mode);
-        $this->authCallBack=function($action=null, $subject=null) {
-            return in_array($action,$this->currentPermission);
+        $this->authCallBack = function ($action = null, $subject = null) {
+            return in_array($action, $this->currentPermission);
         };
-        $this->authAnyCallBack=function($array=[]) {
-            foreach($array as $permission) {
-                if (in_array($permission,$this->currentPermission)) return true;
+        $this->authAnyCallBack = function ($array = []) {
+            foreach ($array as $permission) {
+                if (in_array($permission, $this->currentPermission)) {
+                    return true;
+                }
             }
+
             return false;
         };
 
         if (!file_exists($this->compiledPath)) {
             $ok = @mkdir($this->compiledPath, 0777, true);
             if (!$ok) {
-                $this->showError("Constructing", "Unable to create the compile folder [{$this->compiledPath}]. Check the permissions of it's parent folder.", true);
+                $this->showError('Constructing', "Unable to create the compile folder [{$this->compiledPath}]. Check the permissions of it's parent folder.", true);
             }
         }
     }
+
     //</editor-fold>
     //<editor-fold desc="common">
+
     /**
-     * Macro of function run
+     * Macro of function run.
+     *
      * @param $view
      * @param array $variables
-     * @return string
+     *
      * @throws Debugger
+     *
+     * @return string
      */
     public function runChild($view, $variables = [])
     {
         if (is_array($variables)) {
             $newVariables = array_merge($this->variables, $variables);
         } else {
-            $this->showError("run/include", "Include/run variables should be defined as array ['idx'=>'value']", true);
-            return "";
+            $this->showError('run/include', "Include/run variables should be defined as array ['idx'=>'value']", true);
+
+            return '';
         }
+
         return $this->runInternal($view, $newVariables, false, false, $this->isRunFast);
     }
 
-	/**
-	 * @param string $view example "folder.template"
-	 * @param string|null $alias example "mynewop". If null then it uses the name of the template.
-	 */
-	public function addInclude($view, $alias = null) {
-		if (!isset($alias)) {
-			$alias=explode('.', $view);
-			$alias=end($alias);
-		}
-		$this->directive($alias, function ($expression) use ($view) {
-			$expression = $this->stripParentheses($expression) ?: '[]';
-			return "<?php echo \$this->runChild('{$view}', {$expression}); ?>";
-		});
-	}
+    /**
+     * @param string      $view  example "folder.template"
+     * @param string|null $alias example "mynewop". If null then it uses the name of the template.
+     */
+    public function addInclude($view, $alias = null)
+    {
+        if (!isset($alias)) {
+            $alias = explode('.', $view);
+            $alias = end($alias);
+        }
+        $this->directive($alias, function ($expression) use ($view) {
+            $expression = $this->stripParentheses($expression) ?: '[]';
+
+            return "<?php echo \$this->runChild('{$view}', {$expression}); ?>";
+        });
+    }
 
     /**
      * It sets the base url and it also calculates the relative path.<br>
      * The base url is calculated to determine the relativity of the resources.<br>
      * The trailing slash is removed automatically if it's present.
+     *
      * @param string $baseUrl Example http://www.web.com/folder  https://www.web.com/folder/anotherfolder
      */
-    public function setBaseUrl($baseUrl) {
-        $this->baseUrl=rtrim($baseUrl,'/'); // base with the url trimmed
-        $currentUrl=$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
-        $base=str_replace(['https://','http://'],'',$this->baseUrl);
-        if (strpos($currentUrl,$base)===0) {
-            $part=str_replace($base,'',$currentUrl);
-            $numf=substr_count($part,'/')-1;
-            $numf=($numf>10)?10:$numf; // avoid overflow
-            $this->relativePath=($numf<0)?"":str_repeat('../',$numf);
+    public function setBaseUrl($baseUrl)
+    {
+        $this->baseUrl = rtrim($baseUrl, '/'); // base with the url trimmed
+        $currentUrl = $_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
+        $base = str_replace(['https://', 'http://'], '', $this->baseUrl);
+        if (strpos($currentUrl, $base) === 0) {
+            $part = str_replace($base, '', $currentUrl);
+            $numf = substr_count($part, '/') - 1;
+            $numf = ($numf > 10) ? 10 : $numf; // avoid overflow
+            $this->relativePath = ($numf < 0) ? '' : str_repeat('../', $numf);
         } else {
-            $this->relativePath='';
+            $this->relativePath = '';
         }
     }
 
     /**
-     * Returns the current base url
+     * Returns the current base url.
+     *
      * @return string
      */
-    public function getBaseUrl() {
+    public function getBaseUrl()
+    {
         return $this->baseUrl;
     }
 
@@ -235,18 +258,20 @@ class RadeViewManager
      * @param $view
      * @param $compile
      */
-    public function setPath($view,$compile) {
-        $this->templatePath=$view;
-        $this->compiledPath=$compile;
+    public function setPath($view, $compile)
+    {
+        $this->templatePath = $view;
+        $this->compiledPath = $compile;
     }
 
     /**
-     * Authentication. Sets with a user,role and permission
+     * Authentication. Sets with a user,role and permission.
+     *
      * @param string $user
-     * @param null $role
-     * @param array $permission
+     * @param null   $role
+     * @param array  $permission
      */
-    public function setAuth($user = '', $role = null,$permission=[])
+    public function setAuth($user = '', $role = null, $permission = [])
     {
         $this->currentUser = $user;
         $this->currentRole = $role;
@@ -254,22 +279,28 @@ class RadeViewManager
     }
 
     /**
-     * It sets the callback function for authentication. It is used by @can and @cannot
+     * It sets the callback function for authentication. It is used by @can and @cannot.
+     *
      * @param callable $fn
      */
-    public function setCanFunction(callable $fn) {
-        $this->authCallBack=$fn;
-    }
-    /**
-     * It sets the callback function for authentication. It is used by @canany
-     * @param callable $fn
-     */
-    public function setAnyFunction(callable $fn) {
-        $this->authAnyCallBack=$fn;
+    public function setCanFunction(callable $fn)
+    {
+        $this->authCallBack = $fn;
     }
 
     /**
-     * Get the mode of the engine.See RadeView::MODE_* constants
+     * It sets the callback function for authentication. It is used by @canany.
+     *
+     * @param callable $fn
+     */
+    public function setAnyFunction(callable $fn)
+    {
+        $this->authAnyCallBack = $fn;
+    }
+
+    /**
+     * Get the mode of the engine.See RadeView::MODE_* constants.
+     *
      * @return int
      */
     public function getMode()
@@ -277,12 +308,15 @@ class RadeViewManager
         if (defined('RADEVIEW_MODE')) {
             $this->mode = RADEVIEW_MODE;
         }
+
         return $this->mode;
     }
 
     /**
-     * Set the compile mode
+     * Set the compile mode.
+     *
      * @param $mode int See RadeView::MODE_* constants
+     *
      * @return void
      */
     public function setMode($mode)
@@ -292,10 +326,13 @@ class RadeViewManager
 
     /**
      * run the blade engine. It returns the result of the code.
+     *
      * @param $view
      * @param array $variables
-     * @return string
+     *
      * @throws Debugger
+     *
+     * @return string
      */
     public function run($view, $variables = [])
     {
@@ -303,17 +340,21 @@ class RadeViewManager
         $forced = $mode & 1; // mode=1 forced:it recompiles no matter if the compiled file exists or not.
         $runFast = $mode & 2; // mode=2 runfast: the code is not compiled neither checked and it runs directly the compiled
         if ($mode == 3) {
-            $this->showError("run", "we can't force and run fast at the same time", true);
+            $this->showError('run', "we can't force and run fast at the same time", true);
         }
+
         return $this->runInternal($view, $variables, $forced, true, $runFast);
     }
 
     /**
      * run the blade engine. It returns the result of the code.
+     *
      * @param string HTML to parse
      * @param array $data
-     * @return string
+     *
      * @throws Debugger
+     *
+     * @return string
      */
     public function runString($string, $data)
     {
@@ -328,32 +369,43 @@ class RadeViewManager
         try {
             @eval('?'.'>'.$php);
         } catch (Debugger $e) {
-            while (ob_get_level() > $obLevel) ob_end_clean();
+            while (ob_get_level() > $obLevel) {
+                ob_end_clean();
+            }
+
             throw $e;
         } catch (\ParseError $e) { // PHP 7
-            while (ob_get_level() > $obLevel) ob_end_clean();
-            throw new Debugger($e->getMessage(),$e->getCode());
+            while (ob_get_level() > $obLevel) {
+                ob_end_clean();
+            }
+
+            throw new Debugger($e->getMessage(), $e->getCode());
         }
 
         $lastError = error_get_last(); // PHP 5.6
-        if ($previousError != $lastError && $lastError["type"] == E_PARSE) {
-            while (ob_get_level() > $obLevel) ob_end_clean();
-            throw new Debugger($lastError["message"], $lastError["type"]);
+        if ($previousError != $lastError && $lastError['type'] == E_PARSE) {
+            while (ob_get_level() > $obLevel) {
+                ob_end_clean();
+            }
+
+            throw new Debugger($lastError['message'], $lastError['type']);
         }
 
         return ob_get_clean();
     }
 
-
     /**
      * run the blade engine. It returns the result of the code.
+     *
      * @param $view
      * @param array $variables
-     * @param bool $forced if true then it recompiles no matter if the compiled file exists or not.
-     * @param bool $isParent
-     * @param bool $runFast if true then the code is not compiled neither checked and it runs directly the compiled version.
-     * @return string
+     * @param bool  $forced    if true then it recompiles no matter if the compiled file exists or not.
+     * @param bool  $isParent
+     * @param bool  $runFast   if true then the code is not compiled neither checked and it runs directly the compiled version.
+     *
      * @throws Debugger
+     *
+     * @return string
      */
     private function runInternal($view, $variables = [], $forced = false, $isParent = true, $runFast = false)
     {
@@ -375,15 +427,19 @@ class RadeViewManager
             }
         }
         $this->isRunFast = $runFast;
+
         return $this->evaluatePath($this->getCompiledFile(), $variables);
     }
 
     /**
      * Compile the view at the given path.
+     *
      * @param string $templateName The name of the template. Example folder.template
-     * @param bool $forced If the compilation will be forced (always compile) or not.
-     * @return boolean True if the operation was correct, or false (if not Debugger) if it fails.
+     * @param bool   $forced       If the compilation will be forced (always compile) or not.
+     *
      * @throws Debugger
+     *
+     * @return bool True if the operation was correct, or false (if not Debugger) if it fails.
      */
     public function compile($templateName = null, $forced = false)
     {
@@ -397,7 +453,8 @@ class RadeViewManager
                 if (!file_exists($dir)) {
                     $ok = @mkdir($dir, 0777, true);
                     if (!$ok) {
-                        $this->showError("Compiling", "Unable to create the compile folder [{$dir}]. Check the permissions of it's parent folder.", true);
+                        $this->showError('Compiling', "Unable to create the compile folder [{$dir}]. Check the permissions of it's parent folder.", true);
+
                         return false;
                     }
                 }
@@ -405,39 +462,49 @@ class RadeViewManager
                 $optimizedContent = preg_replace('/^\t{2,}/m', ' ', $optimizedContent);
                 $ok = @file_put_contents($compiled, $optimizedContent);
                 if (!$ok) {
-                    $this->showError("Compiling", "Unable to save the file [{$compiled}]. Check the compile folder is defined and has the right permission");
+                    $this->showError('Compiling', "Unable to save the file [{$compiled}]. Check the compile folder is defined and has the right permission");
+
                     return false;
                 }
             }
         }
+
         return true;
     }
+
     //</editor-fold>
     //<editor-fold desc="compile">
     protected function compileSwitch($expression)
     {
         $this->switchCount++;
         $this->firstCaseInSwitch = true;
+
         return $this->phpTag."switch $expression {";
     }
+
     protected function compileDump($expression)
     {
         return $this->phpTag." echo \$this->dump{$expression};?>";
     }
 
-    protected  function compileRelative($expression) {
+    protected function compileRelative($expression)
+    {
         return $this->phpTag." echo \$this->relative{$expression};?>";
     }
 
     /**
      * it calculates the relative path of a web.<br>
-     * This function uses the current url and the baseurl
+     * This function uses the current url and the baseurl.
      *
      * @param string $relativeWeb . Example img/images.jpg
-     * @return string  Example ../../img/images.jpg
+     *
+     * @return string Example ../../img/images.jpg
      */
-    public function relative($relativeWeb) {
-        if (isset($this->assetDict[$relativeWeb])) return $this->assetDict[$relativeWeb];
+    public function relative($relativeWeb)
+    {
+        if (isset($this->assetDict[$relativeWeb])) {
+            return $this->assetDict[$relativeWeb];
+        }
         // relativepath is calculated when
         return $this->relativePath.$relativeWeb;
     }
@@ -445,26 +512,30 @@ class RadeViewManager
     /**
      * It add an alias to the link of the resources.<br>
      * addAssetDict('name','url/res.jpg')<br>
-     * addAssetDict(['name'=>'url/res.jpg','name2'=>'url/res2.jpg');
+     * addAssetDict(['name'=>'url/res.jpg','name2'=>'url/res2.jpg');.
+     *
      * @param string|array $name example 'css/style.css', you could also add an array
-     * @param string $url example https://www.web.com/style.css'
+     * @param string       $url  example https://www.web.com/style.css'
      */
-    public function addAssetDict($name,$url="") {
+    public function addAssetDict($name, $url = '')
+    {
         if (is_array($name)) {
-            $this->assetDict=array_merge($this->assetDict,$name);
+            $this->assetDict = array_merge($this->assetDict, $name);
         } else {
-            $this->assetDict[$name]=$url;
+            $this->assetDict[$name] = $url;
         }
     }
 
     protected function compileMethod($expression)
     {
-        $v=$this->stripParentheses($expression);
+        $v = $this->stripParentheses($expression);
+
         return $this->phpTag." echo '<input type=\"hidden\" name=\"_method\" value=\"$v\"/>';?>";
     }
+
     protected function compilecsrf()
     {
-        return $this->phpTag." echo '<input type=\"hidden\" name=\"_token\" value=\"".$this-> csrf_token()."\"/>';?>";
+        return $this->phpTag." echo '<input type=\"hidden\" name=\"_token\" value=\"".$this->csrf_token()."\"/>';?>";
     }
 
     protected function compileDd($expression)
@@ -474,21 +545,27 @@ class RadeViewManager
 
     /**
      * Execute the case tag.
+     *
      * @param $expression
+     *
      * @return string
      */
     protected function compileCase($expression)
     {
         if ($this->firstCaseInSwitch) {
             $this->firstCaseInSwitch = false;
-            return "case ".$expression.": ?>";
+
+            return 'case '.$expression.': ?>';
         }
+
         return $this->phpTag."case $expression: ?>";
     }
 
     /**
      * Compile the while statements into valid PHP.
-     * @param  string $expression
+     *
+     * @param string $expression
+     *
      * @return string
      */
     protected function compileWhile($expression)
@@ -497,15 +574,17 @@ class RadeViewManager
     }
 
     /**
-     * default tag used for switch/case
+     * default tag used for switch/case.
+     *
      * @return string
      */
     protected function compileDefault()
     {
         if ($this->firstCaseInSwitch) {
-            return $this->showError("@default", "@switch without any @case", true);
+            return $this->showError('@default', '@switch without any @case', true);
         }
-        return $this->phpTag."default: ?>";
+
+        return $this->phpTag.'default: ?>';
     }
 
     /*
@@ -515,14 +594,17 @@ class RadeViewManager
     {
         $this->switchCount = $this->switchCount - 1;
         if ($this->switchCount < 0) {
-            return $this->showError("@endswitch", "Missing @switch", true);
+            return $this->showError('@endswitch', 'Missing @switch', true);
         }
-        return $this->phpTag."} // end switch ?>";
+
+        return $this->phpTag.'} // end switch ?>';
     }
 
     /**
      * Compile while statements into valid PHP.
-     * @param  string $expression
+     *
+     * @param string $expression
+     *
      * @return string
      */
     protected function compileInject($expression)
@@ -536,12 +618,15 @@ class RadeViewManager
             $var = $this->stripQuotes(substr($ex, 0, $p0));
             $namespace = $this->stripQuotes(substr($ex, $p0 + 1));
         }
+
         return $this->phpTag."\$$var = \$this->injectClass('$namespace', '$var'); ?>";
     }
 
     /**
      * Compile the given Blade template contents.
-     * @param  string $value
+     *
+     * @param string $value
+     *
      * @return string
      */
     protected function compileString($value)
@@ -568,10 +653,11 @@ class RadeViewManager
                 .PHP_EOL.implode(PHP_EOL, array_reverse($this->footer));
         }
         // Compresss output
-        if (Config::get('theme','compression') === true) {
+        if (Config::get('theme', 'compression') === true) {
             $results = \Rlis\RadeMinify\RadeMinify::html($result);
+
             return $results;
-        } else if (Config::get('theme','compression') === false) {
+        } elseif (Config::get('theme', 'compression') === false) {
             return $result;
         } else {
             header('HTTP/1.1 503 Service Unavailable.', true, 503);
@@ -583,7 +669,9 @@ class RadeViewManager
 
     /**
      * Execute the user defined extensions.
-     * @param  string $value
+     *
+     * @param string $value
+     *
      * @return string
      */
     protected function compileExtensions($value)
@@ -592,23 +680,29 @@ class RadeViewManager
             echo "<hr><hr>extensions $compiler<hr><hr>";
             $value = call_user_func($compiler, $value, $this);
         }
+
         return $value;
     }
 
     /**
      * Compile Blade comments into valid PHP.
-     * @param  string $value
+     *
+     * @param string $value
+     *
      * @return string
      */
     protected function compileComments($value)
     {
         $pattern = sprintf('/%s--(.*?)--%s/s', $this->contentTags[0], $this->contentTags[1]);
+
         return preg_replace($pattern, $this->phpTag.'/*$1*/ ?>', $value);
     }
 
     /**
      * Compile Blade echos into valid PHP.
-     * @param  string $value
+     *
+     * @param string $value
+     *
      * @return string
      */
     protected function compileEchos($value)
@@ -616,12 +710,15 @@ class RadeViewManager
         foreach ($this->getEchoMethods() as $method => $length) {
             $value = $this->$method($value);
         }
+
         return $value;
     }
 
     /**
      * Compile Blade statements that start with "@".
-     * @param  string $value
+     *
+     * @param string $value
+     *
      * @return mixed
      */
     protected function compileStatements($value)
@@ -630,8 +727,8 @@ class RadeViewManager
             if (static::contains($match[1], '@')) {
                 $match[0] = isset($match[3]) ? $match[1].$match[3] : $match[1];
             } elseif (isset($this->customDirectivesRT[$match[1]])) {
-                if ($this->customDirectivesRT[$match[1]]==true) {
-                    $match[0]=$this->compileStatementCustom($match);
+                if ($this->customDirectivesRT[$match[1]] == true) {
+                    $match[0] = $this->compileStatementCustom($match);
                 } else {
                     $match[0] = call_user_func($this->customDirectives[$match[1]], static::get($match, 3));
                 }
@@ -641,26 +738,33 @@ class RadeViewManager
                 return $match[0];
                 //$this->showError("@compile", "Operation not defined:@".$match[1], true);
             }
+
             return isset($match[3]) ? $match[0] : $match[0].$match[2];
         };
+
         return preg_replace_callback('/\B@(@?\w+)([ \t]*)(\( ( (?>[^()]+) | (?3) )* \))?/x', $callback, $value);
     }
 
     /**
      * For compile custom directive at runtime.
+     *
      * @param $match
+     *
      * @return string
      */
     protected function compileStatementCustom($match)
     {
-        $v=$this->stripParentheses(static::get($match, 3));
-        $v=($v=='')?'':','.$v;
+        $v = $this->stripParentheses(static::get($match, 3));
+        $v = ($v == '') ? '' : ','.$v;
+
         return $this->phpTag.'call_user_func($this->customDirectives[\''.$match[1].'\']'.$v.'); ?>';
     }
 
     /**
      * Compile the "raw" echo statements.
-     * @param  string $value
+     *
+     * @param string $value
+     *
      * @return string
      */
     protected function compileRawEchos($value)
@@ -668,14 +772,18 @@ class RadeViewManager
         $pattern = sprintf('/(@)?%s\s*(.+?)\s*%s(\r?\n)?/s', $this->rawTags[0], $this->rawTags[1]);
         $callback = function ($matches) {
             $whitespace = empty($matches[3]) ? '' : $matches[3].$matches[3];
+
             return $matches[1] ? substr($matches[0], 1) : $this->phpTag.'echo '.$this->compileEchoDefaults($matches[2]).'; ?>'.$whitespace;
         };
+
         return preg_replace_callback($pattern, $callback, $value);
     }
 
     /**
      * Compile the "regular" echo statements.
-     * @param  string $value
+     *
+     * @param string $value
+     *
      * @return string
      */
     protected function compileRegularEchos($value)
@@ -684,14 +792,18 @@ class RadeViewManager
         $callback = function ($matches) {
             $whitespace = empty($matches[3]) ? '' : $matches[3].$matches[3];
             $wrapped = sprintf($this->echoFormat, $this->compileEchoDefaults($matches[2]));
+
             return $matches[1] ? substr($matches[0], 1) : $this->phpTag.'echo '.$wrapped.'; ?>'.$whitespace;
         };
+
         return preg_replace_callback($pattern, $callback, $value);
     }
 
     /**
      * Compile the escaped echo statements.
-     * @param  string $value
+     *
+     * @param string $value
+     *
      * @return string
      */
     protected function compileEscapedEchos($value)
@@ -699,14 +811,18 @@ class RadeViewManager
         $pattern = sprintf('/(@)?%s\s*(.+?)\s*%s(\r?\n)?/s', $this->escapedTags[0], $this->escapedTags[1]);
         $callback = function ($matches) {
             $whitespace = empty($matches[3]) ? '' : $matches[3].$matches[3];
+
             return $matches[1] ? $matches[0] : $this->phpTag.'echo static::e('.$this->compileEchoDefaults($matches[2]).'); ?>'.$whitespace;
         };
+
         return preg_replace_callback($pattern, $callback, $value);
     }
 
     /**
      * Compile the default values for the echo statement.
-     * @param  string $value
+     *
+     * @param string $value
+     *
      * @return string
      */
     protected function compileEchoDefaults($value)
@@ -716,7 +832,9 @@ class RadeViewManager
 
     /**
      * Compile the each statements into valid PHP.
-     * @param  string $expression
+     *
+     * @param string $expression
+     *
      * @return string
      */
     protected function compileEach($expression)
@@ -729,12 +847,15 @@ class RadeViewManager
         //$segments = explode('=', preg_replace("/[\(\)\\\"\']/", '', $expression));
         $segments = explode('=', preg_replace("/[\(\)\\\']/", '', $expression));
         $value = (count($segments) >= 2) ? ' =@'.$segments[1] : '++';
-        return $this->phpTag.trim($segments[0]).$value."; ?>";
+
+        return $this->phpTag.trim($segments[0]).$value.'; ?>';
     }
 
     /**
      * Compile the yield statements into valid PHP.
-     * @param  string $expression
+     *
+     * @param string $expression
+     *
      * @return string
      */
     protected function compileYield($expression)
@@ -744,6 +865,7 @@ class RadeViewManager
 
     /**
      * Compile the show statements into valid PHP.
+     *
      * @return string
      */
     protected function compileShow()
@@ -753,7 +875,9 @@ class RadeViewManager
 
     /**
      * Compile the section statements into valid PHP.
-     * @param  string $expression
+     *
+     * @param string $expression
+     *
      * @return string
      */
     protected function compileSection($expression)
@@ -763,6 +887,7 @@ class RadeViewManager
 
     /**
      * Compile the append statements into valid PHP.
+     *
      * @return string
      */
     protected function compileAppend()
@@ -772,34 +897,41 @@ class RadeViewManager
 
     /**
      * Compile the auth statements into valid PHP.
+     *
      * @param string $expression
+     *
      * @return string
      */
     protected function compileAuth($expression = '')
     {
         $role = $this->stripParentheses($expression);
-        if ($role=='') {
-            return $this->phpTag."if(isset(\$this->currentUser)): ?>";
+        if ($role == '') {
+            return $this->phpTag.'if(isset($this->currentUser)): ?>';
         } else {
             return $this->phpTag."if(isset(\$this->currentUser) && \$this->currentRole=={$role}): ?>";
         }
     }
+
     /**
      * Compile the elseauth statements into valid PHP.
+     *
      * @param string $expression
+     *
      * @return string
      */
-    protected function compileElseAuth($expression='')
+    protected function compileElseAuth($expression = '')
     {
         $role = $this->stripParentheses($expression);
-        if ($role=='') {
-            return $this->phpTag."else: ?>";
+        if ($role == '') {
+            return $this->phpTag.'else: ?>';
         } else {
             return $this->phpTag."elseif(isset(\$this->currentUser) && \$this->currentRole=={$role}): ?>";
         }
     }
+
     /**
      * Compile the end-auth statements into valid PHP.
+     *
      * @return string
      */
     protected function compileEndAuth()
@@ -807,18 +939,23 @@ class RadeViewManager
         return $this->phpTag.'endif; ?>';
     }
 
-    protected function compileCan($expression) {
-        $v=$this->stripParentheses($expression);
+    protected function compileCan($expression)
+    {
+        $v = $this->stripParentheses($expression);
+
         return $this->phpTag.'if (call_user_func($this->authCallBack,'.$v.')): ?>';
     }
+
     /**
      * Compile the else statements into valid PHP.
+     *
      * @param string $expression
+     *
      * @return string
      */
-    protected function compileElseCan($expression='')
+    protected function compileElseCan($expression = '')
     {
-        $v=$this->stripParentheses($expression);
+        $v = $this->stripParentheses($expression);
         if ($v) {
             return $this->phpTag.'elseif (call_user_func($this->authCallBack,'.$v.')): ?>';
         } else {
@@ -826,88 +963,103 @@ class RadeViewManager
         }
     }
 
+    protected function compileCannot($expression)
+    {
+        $v = $this->stripParentheses($expression);
 
-    protected function compileCannot($expression) {
-        $v=$this->stripParentheses($expression);
         return $this->phpTag.'if (!call_user_func($this->authCallBack,'.$v.')): ?>';
     }
+
     /**
      * Compile the elsecannot statements into valid PHP.
+     *
      * @param string $expression
+     *
      * @return string
      */
-    protected function compileElseCannot($expression='')
+    protected function compileElseCannot($expression = '')
     {
-        $v=$this->stripParentheses($expression);
+        $v = $this->stripParentheses($expression);
         if ($v) {
             return $this->phpTag.'elseif (!call_user_func($this->authCallBack,'.$v.')): ?>';
         } else {
             return $this->phpTag.'else: ?>';
         }
     }
+
     /**
-     * canany(['edit','write'])
+     * canany(['edit','write']).
+     *
      * @param $expression
+     *
      * @return string
      */
-    protected function compileCanAny($expression) {
-        $role=$this->stripParentheses($expression);
+    protected function compileCanAny($expression)
+    {
+        $role = $this->stripParentheses($expression);
+
         return $this->phpTag.'if (call_user_func($this->authAnyCallBack,'.$role.')): ?>';
     }
+
     /**
      * Compile the else statements into valid PHP.
+     *
      * @param $expression
+     *
      * @return string
      */
     protected function compileElseCanAny($expression)
     {
-        $role=$this->stripParentheses($expression);
-        if ($role =='') {
-            return $this->phpTag."else: ?>";
+        $role = $this->stripParentheses($expression);
+        if ($role == '') {
+            return $this->phpTag.'else: ?>';
         } else {
             return $this->phpTag.'elseif (call_user_func($this->authAnyCallBack,'.$role.')): ?>';
         }
     }
 
-
     /**
      * Compile the guest statements into valid PHP.
+     *
      * @param null $expression
+     *
      * @return string
      */
     protected function compileGuest($expression = null)
     {
         if ($expression === null) {
-            return $this->phpTag."if(!isset(\$this->currentUser)): ?>";
+            return $this->phpTag.'if(!isset($this->currentUser)): ?>';
         } else {
             $role = $this->stripParentheses($expression);
-            if ($role=="") {
-                return $this->phpTag."if(!isset(\$this->currentUser)): ?>";
+            if ($role == '') {
+                return $this->phpTag.'if(!isset($this->currentUser)): ?>';
             } else {
                 return $this->phpTag."if(!isset(\$this->currentUser) || \$this->currentRole!={$role}): ?>";
             }
         }
     }
+
     /**
      * Compile the else statements into valid PHP.
+     *
      * @param $expression
+     *
      * @return string
      */
     protected function compileElseGuest($expression)
     {
-        $role=$this->stripParentheses($expression);
-        if ($role =='') {
-            return $this->phpTag."else: ?>";
+        $role = $this->stripParentheses($expression);
+        if ($role == '') {
+            return $this->phpTag.'else: ?>';
         } else {
             return $this->phpTag."elseif(!isset(\$this->currentUser) || \$this->currentRole!={$role}): ?>";
         }
     }
 
-
-
     /**
      * /**
      * Compile the end-auth statements into valid PHP.
+     *
      * @return string
      */
     protected function compileEndGuest()
@@ -915,9 +1067,9 @@ class RadeViewManager
         return $this->phpTag.'endif; ?>';
     }
 
-
     /**
      * Compile the end-section statements into valid PHP.
+     *
      * @return string
      */
     protected function compileEndsection()
@@ -927,6 +1079,7 @@ class RadeViewManager
 
     /**
      * Compile the stop statements into valid PHP.
+     *
      * @return string
      */
     protected function compileStop()
@@ -936,6 +1089,7 @@ class RadeViewManager
 
     /**
      * Compile the overwrite statements into valid PHP.
+     *
      * @return string
      */
     protected function compileOverwrite()
@@ -945,7 +1099,9 @@ class RadeViewManager
 
     /**
      * Compile the unless statements into valid PHP.
-     * @param  string $expression
+     *
+     * @param string $expression
+     *
      * @return string
      */
     protected function compileUnless($expression)
@@ -953,17 +1109,19 @@ class RadeViewManager
         return $this->phpTag."if ( ! $expression): ?>";
     }
 
-	/**
-	 * Compile the User statements into valid PHP.
-	 * @return string
-	 */
+    /**
+     * Compile the User statements into valid PHP.
+     *
+     * @return string
+     */
     protected function compileUser()
     {
-        return $this->phpTag ."echo '".$this->currentUser."'; ?>";
+        return $this->phpTag."echo '".$this->currentUser."'; ?>";
     }
 
     /**
      * Compile the endunless statements into valid PHP.
+     *
      * @return string
      */
     protected function compileEndunless()
@@ -973,6 +1131,7 @@ class RadeViewManager
 
     /**
      * Compile the else statements into valid PHP.
+     *
      * @return string
      */
     protected function compileElse()
@@ -980,12 +1139,11 @@ class RadeViewManager
         return $this->phpTag.'else: ?>';
     }
 
-
-
-
     /**
      * Compile the for statements into valid PHP.
-     * @param  string $expression
+     *
+     * @param string $expression
+     *
      * @return string
      */
     protected function compileFor($expression)
@@ -995,7 +1153,9 @@ class RadeViewManager
 
     /**
      * Compile the foreach statements into valid PHP.
-     * @param  string $expression
+     *
+     * @param string $expression
+     *
      * @return string
      */
     protected function compileForeach($expression)
@@ -1005,12 +1165,15 @@ class RadeViewManager
         $iteration = trim($matches[2]);
         $initLoop = "\$__currentLoopData = {$iteratee}; \$this->addLoop(\$__currentLoopData);";
         $iterateLoop = '$this->incrementLoopIndices(); $loop = $this->getFirstLoop();';
+
         return $this->phpTag."{$initLoop} foreach(\$__currentLoopData as {$iteration}): {$iterateLoop} ?>";
     }
 
     /**
      * Compile a split of a foreach cycle. Used for example when we want to separate limites each "n" elements.
-     * @param  string $expression
+     *
+     * @param string $expression
+     *
      * @return string
      */
     protected function compileSplitForeach($expression)
@@ -1020,7 +1183,9 @@ class RadeViewManager
 
     /**
      * Compile the break statements into valid PHP.
-     * @param  string $expression
+     *
+     * @param string $expression
+     *
      * @return string
      */
     protected function compileBreak($expression)
@@ -1030,7 +1195,9 @@ class RadeViewManager
 
     /**
      * Compile the continue statements into valid PHP.
-     * @param  string $expression
+     *
+     * @param string $expression
+     *
      * @return string
      */
     protected function compileContinue($expression)
@@ -1040,18 +1207,23 @@ class RadeViewManager
 
     /**
      * Compile the forelse statements into valid PHP.
-     * @param  string $expression
+     *
+     * @param string $expression
+     *
      * @return string
      */
     protected function compileForelse($expression)
     {
         $empty = '$__empty_'.++$this->forelseCounter;
+
         return $this->phpTag."{$empty} = true; foreach{$expression}: {$empty} = false; ?>";
     }
 
     /**
      * Compile the if statements into valid PHP.
-     * @param  string $expression
+     *
+     * @param string $expression
+     *
      * @return string
      */
     protected function compileIf($expression)
@@ -1061,7 +1233,9 @@ class RadeViewManager
 
     /**
      * Compile the else-if statements into valid PHP.
-     * @param  string $expression
+     *
+     * @param string $expression
+     *
      * @return string
      */
     protected function compileElseif($expression)
@@ -1071,24 +1245,27 @@ class RadeViewManager
 
     /**
      * Compile the forelse statements into valid PHP.
+     *
      * @param string $expression empty if it's inside a for loop.
+     *
      * @return string
      */
     protected function compileEmpty($expression = '')
     {
-
         if (($expression == '')) {
             $empty = '$__empty_'.$this->forelseCounter--;
+
             return $this->phpTag."endforeach; if ({$empty}): ?>";
         } else {
             return $this->phpTag."if (empty{$expression}): ?>";
         }
-
     }
 
     /**
      * Compile the has section statements into valid PHP.
-     * @param  string $expression
+     *
+     * @param string $expression
+     *
      * @return string
      */
     protected function compileHasSection($expression)
@@ -1098,6 +1275,7 @@ class RadeViewManager
 
     /**
      * Compile the end-while statements into valid PHP.
+     *
      * @return string
      */
     protected function compileEndwhile()
@@ -1107,6 +1285,7 @@ class RadeViewManager
 
     /**
      * Compile the end-for statements into valid PHP.
+     *
      * @return string
      */
     protected function compileEndfor()
@@ -1116,6 +1295,7 @@ class RadeViewManager
 
     /**
      * Compile the end-for-each statements into valid PHP.
+     *
      * @return string
      */
     protected function compileEndforeach()
@@ -1125,6 +1305,7 @@ class RadeViewManager
 
     /**
      * Compile the end-can statements into valid PHP.
+     *
      * @return string
      */
     protected function compileEndcan()
@@ -1134,6 +1315,7 @@ class RadeViewManager
 
     /**
      * Compile the end-can statements into valid PHP.
+     *
      * @return string
      */
     protected function compileEndcanany()
@@ -1141,9 +1323,9 @@ class RadeViewManager
         return $this->phpTag.'endif; ?>';
     }
 
-
     /**
      * Compile the end-cannot statements into valid PHP.
+     *
      * @return string
      */
     protected function compileEndcannot()
@@ -1153,6 +1335,7 @@ class RadeViewManager
 
     /**
      * Compile the end-if statements into valid PHP.
+     *
      * @return string
      */
     protected function compileEndif()
@@ -1162,6 +1345,7 @@ class RadeViewManager
 
     /**
      * Compile the end-for-else statements into valid PHP.
+     *
      * @return string
      */
     protected function compileEndforelse()
@@ -1171,7 +1355,9 @@ class RadeViewManager
 
     /**
      * Compile the raw PHP statements into valid PHP.
-     * @param  string $expression
+     *
+     * @param string $expression
+     *
      * @return string
      */
     protected function compilePhp($expression)
@@ -1181,6 +1367,7 @@ class RadeViewManager
 
     /**
      * Compile end-php statement into valid PHP.
+     *
      * @return string
      */
     protected function compileEndphp()
@@ -1190,7 +1377,9 @@ class RadeViewManager
 
     /**
      * Compile the unset statements into valid PHP.
-     * @param  string $expression
+     *
+     * @param string $expression
+     *
      * @return string
      */
     protected function compileUnset($expression)
@@ -1200,7 +1389,9 @@ class RadeViewManager
 
     /**
      * Compile the extends statements into valid PHP.
-     * @param  string $expression
+     *
+     * @param string $expression
+     *
      * @return string
      */
     protected function compileExtends($expression)
@@ -1212,12 +1403,15 @@ class RadeViewManager
         $this->uidCounter++;
         $data = $this->phpTag.'if (@$_shouldextend['.$this->uidCounter.']) { echo $this->runChild('.$expression.'); } ?>';
         $this->footer[] = $data;
+
         return $this->phpTag.'$_shouldextend['.$this->uidCounter.']=1; ?>';
     }
 
     /**
-     * Execute the @parent command. This operation works in tandem with extendSection
+     * Execute the @parent command. This operation works in tandem with extendSection.
+     *
      * @return string
+     *
      * @see extendSection
      */
     protected function compileParent()
@@ -1227,43 +1421,50 @@ class RadeViewManager
 
     /**
      * Compile the include statements into valid PHP.
-     * @param  string $expression
+     *
+     * @param string $expression
+     *
      * @return string
      */
     protected function compileInclude($expression)
     {
         $expression = $this->stripParentheses($expression);
+
         return $replace = $this->phpTag.'echo $this->runChild('.$expression.'); ?>';
     }
 
     /**
      * It loads an compiled template and paste inside the code.<br>
-     * It uses more disk space but it decreases the number of includes<br>
+     * It uses more disk space but it decreases the number of includes<br>.
+     *
      * @param $expression
-     * @return string
+     *
      * @throws Debugger
+     *
+     * @return string
      */
     protected function compileIncludeFast($expression)
     {
         $expression = $this->stripParentheses($expression);
-        $ex=$this->stripParentheses($expression);
-        $exp=explode(',',$ex);
-        $file=$this->stripQuotes(@$exp[0]);
-        $fileC=$this->getCompiledFile($file);
+        $ex = $this->stripParentheses($expression);
+        $exp = explode(',', $ex);
+        $file = $this->stripQuotes(@$exp[0]);
+        $fileC = $this->getCompiledFile($file);
         if (!@file_exists($fileC)) {
             // if the file doesn't exist then it's created
-            $this->compile($file,true);
+            $this->compile($file, true);
         }
-        $txt=$this->getFile($fileC);
+        $txt = $this->getFile($fileC);
 
         //eval("\$x=\$this->run($expression);")."123";
         return $txt;
     }
 
-
     /**
      * Compile the include statements into valid PHP.
-     * @param  string $expression
+     *
+     * @param string $expression
+     *
      * @return string
      */
     protected function compileIncludeIf($expression)
@@ -1273,30 +1474,37 @@ class RadeViewManager
 
     /**
      * Compile the include statements into valid PHP.
-     * @param  string $expression
+     *
+     * @param string $expression
+     *
      * @return string
      */
     protected function compileIncludeWhen($expression)
     {
         $expression = $this->stripParentheses($expression);
+
         return $replace = $this->phpTag.'echo $this->includeWhen('.$expression.'); ?>';
     }
 
     /**
-     * Compile the includefirst statement
-     * @param  string $expression
+     * Compile the includefirst statement.
+     *
+     * @param string $expression
+     *
      * @return string
      */
     protected function compileIncludeFirst($expression)
     {
         $expression = $this->stripParentheses($expression);
+
         return $replace = $this->phpTag.'echo $this->includeFirst('.$expression.'); ?>';
     }
 
-
     /**
      * Compile the stack statements into the content.
-     * @param  string $expression
+     *
+     * @param string $expression
+     *
      * @return string
      */
     protected function compileStack($expression)
@@ -1306,7 +1514,9 @@ class RadeViewManager
 
     /**
      * Compile the push statements into valid PHP.
-     * @param  string $expression
+     *
+     * @param string $expression
+     *
      * @return string
      */
     public function compilePush($expression)
@@ -1316,7 +1526,9 @@ class RadeViewManager
 
     /**
      * Compile the push statements into valid PHP.
-     * @param  string $expression
+     *
+     * @param string $expression
+     *
      * @return string
      */
     public function compilePrepend($expression)
@@ -1326,6 +1538,7 @@ class RadeViewManager
 
     /**
      * Compile the endpush statements into valid PHP.
+     *
      * @return string
      */
     protected function compileEndpush()
@@ -1335,6 +1548,7 @@ class RadeViewManager
 
     /**
      * Compile the endpush statements into valid PHP.
+     *
      * @return string
      */
     protected function compileEndPrepend()
@@ -1344,7 +1558,9 @@ class RadeViewManager
 
     /**
      * Compile the component statements into valid PHP.
-     * @param  string $expression
+     *
+     * @param string $expression
+     *
      * @return string
      */
     protected function compileComponent($expression)
@@ -1354,6 +1570,7 @@ class RadeViewManager
 
     /**
      * Compile the end-component statements into valid PHP.
+     *
      * @return string
      */
     protected function compileEndComponent()
@@ -1363,7 +1580,9 @@ class RadeViewManager
 
     /**
      * Compile the slot statements into valid PHP.
-     * @param  string $expression
+     *
+     * @param string $expression
+     *
      * @return string
      */
     protected function compileSlot($expression)
@@ -1373,13 +1592,13 @@ class RadeViewManager
 
     /**
      * Compile the end-slot statements into valid PHP.
+     *
      * @return string
      */
     protected function compileEndSlot()
     {
         return $this->phpTag.' $this->endSlot(); ?>';
     }
-
 
     protected function compileAsset($expression)
     {
@@ -1388,13 +1607,13 @@ class RadeViewManager
 
     protected function compileJSon($expression)
     {
-	    $parts = explode(',', $this->stripParentheses($expression));
-	    $options = isset($parts[1]) ? trim($parts[1]) : JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT;
-	    $depth = isset($parts[2]) ? trim($parts[2]) : 512;
+        $parts = explode(',', $this->stripParentheses($expression));
+        $options = isset($parts[1]) ? trim($parts[1]) : JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT;
+        $depth = isset($parts[2]) ? trim($parts[2]) : 512;
+
         return $this->phpTag." echo json_encode($parts[0], $options, $depth); ?>";
     }
-  
-    
+
     protected function compileIsset($expression)
     {
         return $this->phpTag."if(isset{$expression}): ?>";
@@ -1412,10 +1631,13 @@ class RadeViewManager
 
     //</editor-fold>
     //<editor-fold desc="push">
+
     /**
      * Start injecting content into a push section.
-     * @param  string $section
-     * @param  string $content
+     *
+     * @param string $section
+     * @param string $content
+     *
      * @return void
      */
     public function startPush($section, $content = '')
@@ -1431,8 +1653,10 @@ class RadeViewManager
 
     /**
      * Start injecting content into a push section.
-     * @param  string $section
-     * @param  string $content
+     *
+     * @param string $section
+     * @param string $content
+     *
      * @return void
      */
     public function startPrepend($section, $content = '')
@@ -1448,6 +1672,7 @@ class RadeViewManager
 
     /**
      * Stop injecting content into a push section.
+     *
      * @return string
      */
     public function stopPush()
@@ -1457,11 +1682,13 @@ class RadeViewManager
         }
         $last = array_pop($this->pushStack);
         $this->extendPush($last, ob_get_clean());
+
         return $last;
     }
 
     /**
      * Stop injecting content into a push section.
+     *
      * @return string
      */
     public function stopPrepend()
@@ -1471,13 +1698,16 @@ class RadeViewManager
         }
         $last = array_shift($this->pushStack);
         $this->extendStartPush($last, ob_get_clean());
+
         return $last;
     }
 
     /**
      * Append content to a given push section.
-     * @param  string $section
-     * @param  string $content
+     *
+     * @param string $section
+     * @param string $content
+     *
      * @return void
      */
     protected function extendPush($section, $content)
@@ -1494,8 +1724,10 @@ class RadeViewManager
 
     /**
      * Append content to a given push section.
-     * @param  string $section
-     * @param  string $content
+     *
+     * @param string $section
+     * @param string $content
+     *
      * @return void
      */
     protected function extendStartPush($section, $content)
@@ -1512,8 +1744,10 @@ class RadeViewManager
 
     /**
      * Get the string contents of a push section.
-     * @param  string $section
-     * @param  string $default
+     *
+     * @param string $section
+     * @param string $default
+     *
      * @return string
      */
     public function yieldPushContent($section, $default = '')
@@ -1521,48 +1755,57 @@ class RadeViewManager
         if (!isset($this->pushes[$section])) {
             return $default;
         }
+
         return implode(array_reverse($this->pushes[$section]));
     }
 
     /**
      * Get the string contents of a push section.
-     * @param int $each
+     *
+     * @param int    $each
      * @param string $splitText
      * @param string $splitEnd
+     *
      * @return string
      */
-    public function splitForeach($each = 1, $splitText=',', $splitEnd = '')
+    public function splitForeach($each = 1, $splitText = ',', $splitEnd = '')
     {
         $loopStack = static::last($this->loopsStack); // array(7) { ["index"]=> int(0) ["remaining"]=> int(6) ["count"]=> int(5) ["first"]=> bool(true) ["last"]=> bool(false) ["depth"]=> int(1) ["parent"]=> NULL }
         if ($loopStack['index'] == $loopStack['count']) {
             return $splitEnd;
         }
         if ($loopStack['index'] % $each == 0) {
-
             return $splitText;
         }
-        return "";
+
+        return '';
     }
+
     //</editor-fold>
     //<editor-fold desc="compile extras">
+
     /**
      * Store the verbatim blocks and replace them with a temporary placeholder.
-     * @param  string $value
+     *
+     * @param string $value
+     *
      * @return string
      */
     protected function storeVerbatimBlocks($value)
     {
         return preg_replace_callback('/(?<!@)@verbatim(.*?)@endverbatim/s', function ($matches) {
             $this->verbatimBlocks[] = $matches[1];
+
             return $this->verbatimPlaceholder;
         }, $value);
     }
 
-
     /**
      * Register an "if" statement directive.
-     * @param  string $name
-     * @param  callable $callback
+     *
+     * @param string   $name
+     * @param callable $callback
+     *
      * @return string
      */
     public function _if($name, callable $callback)
@@ -1571,6 +1814,7 @@ class RadeViewManager
 
         $this->directive($name, function ($expression) use ($name) {
             $tmp = $this->stripParentheses($expression);
+
             return $expression !== ''
                 ? $this->phpTag." if (\$this->check('{$name}', {$tmp})): ?>"
                 : $this->phpTag." if (\$this->check('{$name}')): ?>";
@@ -1578,6 +1822,7 @@ class RadeViewManager
 
         $this->directive('else'.$name, function ($expression) use ($name) {
             $tmp = $this->stripParentheses($expression);
+
             return $expression !== ''
                 ? $this->phpTag." elseif (\$this->check('{$name}', {$tmp})): ?>"
                 : $this->phpTag." elseif (\$this->check('{$name}')): ?>";
@@ -1586,28 +1831,33 @@ class RadeViewManager
         $this->directive('end'.$name, function () {
             return $this->phpTag.' endif; ?>';
         });
-        return "";
+
+        return '';
     }
 
     /**
      * @param string $name
      * @param $args[]
-     * @return mixed
+     *
      * @throws Debugger
+     *
+     * @return mixed
      */
     public function __call($name, $args)
     {
-        if ($name=='if') {
+        if ($name == 'if') {
             return $this->_if(@$args[0], @$args[1]);
         }
+
         throw new Debugger("function $name is not defined<br>");
     }
 
     /**
      * Check the result of a condition.
      *
-     * @param  string  $name
-     * @param  array  $parameters
+     * @param string $name
+     * @param array  $parameters
+     *
      * @return bool
      */
     public function check($name, ...$parameters)
@@ -1616,26 +1866,30 @@ class RadeViewManager
     }
 
     /**
-     * @param bool $bool
-     * @param string $view name of the view
-     * @param array $value arrays of values
-     * @return string
+     * @param bool   $bool
+     * @param string $view  name of the view
+     * @param array  $value arrays of values
+     *
      * @throws Debugger
+     *
+     * @return string
      */
     public function includeWhen($bool = false, $view = '', $value = [])
     {
         if ($bool) {
             return $this->runChild($view, $value);
         } else {
-            return "";
+            return '';
         }
     }
 
     /**
      * @param array $views array of views
      * @param array $value
-     * @return string
+     *
      * @throws Debugger
+     *
+     * @return string
      */
     public function includeFirst($views = [], $value = [])
     {
@@ -1643,13 +1897,16 @@ class RadeViewManager
             if ($this->templateExist($view)) {
                 return $this->runChild($view, $value);
             }
-        };
+        }
+
         return '';
     }
 
     /**
-     * Convert an array such as ["class1"=>"myclass","style="mystyle"] to class1='myclass' style='mystyle' string
+     * Convert an array such as ["class1"=>"myclass","style="mystyle"] to class1='myclass' style='mystyle' string.
+     *
      * @param array|string $array array to convert
+     *
      * @return string
      */
     public function convertArg($array)
@@ -1657,17 +1914,20 @@ class RadeViewManager
         if (!is_array($array)) {
             return $array;  // nothing to convert.
         }
+
         return implode(' ', array_map('static::convertArgCallBack', array_keys($array), $array));
     }
 
-    function convertArgCallBack($k, $v)
+    public function convertArgCallBack($k, $v)
     {
         return $k."='{$v}' ";
     }
 
     /**
      * Replace the raw placeholders with the original code stored in the raw blocks.
-     * @param  string $result
+     *
+     * @param string $result
+     *
      * @return string
      */
     protected function restoreVerbatimBlocks($result)
@@ -1676,12 +1936,15 @@ class RadeViewManager
             return array_shift($this->verbatimBlocks);
         }, $result);
         $this->verbatimBlocks = [];
+
         return $result;
     }
 
     /**
      * Parse the tokens from the template.
-     * @param  array $token
+     *
+     * @param array $token
+     *
      * @return string
      */
     protected function parseToken($token)
@@ -1692,6 +1955,7 @@ class RadeViewManager
                 $content = $this->{"compile{$type}"}($content);
             }
         }
+
         return $content;
     }
 
@@ -1699,66 +1963,78 @@ class RadeViewManager
      * Regenerates the csrf token and stores in the session.
      * It requires an open session.
      */
-    public function regenerateToken() {
+    public function regenerateToken()
+    {
         try {
             $this->csrf_token = bin2hex(random_bytes(10));
         } catch (Debugger $e) {
-            $this->csrf_token="123456789012345678901234567890"; // unable to generates a random token.
+            $this->csrf_token = '123456789012345678901234567890'; // unable to generates a random token.
         }
-        @$_SESSION["_token"]=$this->csrf_token."|".$this->ipClient();
+        @$_SESSION['_token'] = $this->csrf_token.'|'.$this->ipClient();
     }
 
     /**
      * Returns the current token. if there is not a token then it generates a new one.
      * It could require an open session.
-     * @param bool $fullToken  It returns a token with the current ip.
+     *
+     * @param bool $fullToken It returns a token with the current ip.
+     *
      * @return string
      */
-    public function csrf_token($fullToken=false) {
-        if ($this->csrf_token=="") {
+    public function csrf_token($fullToken = false)
+    {
+        if ($this->csrf_token == '') {
             $this->regenerateToken();
         }
         if ($fullToken) {
-            return $this->csrf_token."|".$this->ipClient();
+            return $this->csrf_token.'|'.$this->ipClient();
         }
+
         return $this->csrf_token;
     }
 
     /**
      * Validates if the csrf token is valid or not.
      * It could require an open session.
+     *
      * @return bool
      */
-    public function csrfIsValid() {
-
+    public function csrfIsValid()
+    {
         if (@$_SERVER['REQUEST_METHOD'] == 'POST') {
-            $this->csrf_token= @$_POST['_token'];
-            return $this->csrf_token."|".$this->ipClient()==@$_SESSION["_token"];
+            $this->csrf_token = @$_POST['_token'];
+
+            return $this->csrf_token.'|'.$this->ipClient() == @$_SESSION['_token'];
         } else {
-            if ($this->csrf_token=="") {
+            if ($this->csrf_token == '') {
                 // if not token then we generate a new one
                 $this->regenerateToken();
             }
+
             return true;
         }
     }
-    public function ipClient() {
 
+    public function ipClient()
+    {
         if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            if (preg_match( "/^([d]{1,3}).([d]{1,3}).([d]{1,3}).([d]{1,3})$/", $_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            if (preg_match('/^([d]{1,3}).([d]{1,3}).([d]{1,3}).([d]{1,3})$/', $_SERVER['HTTP_X_FORWARDED_FOR'])) {
                 return $_SERVER['HTTP_X_FORWARDED_FOR'];
             }
         }
+
         return isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
     }
+
     /**
      * Get the echo methods in the proper order for compilation.
+     *
      * @return array
      */
     protected function getEchoMethods()
     {
         $methods = [
-            'compileRawEchos' => strlen(stripcslashes($this->rawTags[0])),
+            'compileRawEchos'     => strlen(stripcslashes($this->rawTags[0])),
             'compileEscapedEchos' => strlen(stripcslashes($this->escapedTags[0])),
             'compileRegularEchos' => strlen(stripcslashes($this->contentTags[0])),
         ];
@@ -1783,35 +2059,42 @@ class RadeViewManager
             if ($method2 === 'compileEscapedEchos') {
                 return 1;
             }
+
             throw new Debugger('Method not defined');
         });
+
         return $methods;
     }
 
     /**
      * Stop injecting content into a section and return its contents.
+     *
      * @return string
      */
     public function yieldSection()
     {
         $r = @$this->sections[$this->stopSection()];
+
         return $r;
     }
 
-    public function dump($object,$jsconsole=false) {
+    public function dump($object, $jsconsole = false)
+    {
         if (!$jsconsole) {
             echo '<pre>';
             var_dump($object);
             echo '</pre>';
         } else {
-            echo "<script>console.log(".json_encode($object).")</script>";
+            echo '<script>console.log('.json_encode($object).')</script>';
         }
     }
 
     /**
      * Start injecting content into a section.
-     * @param  string $section
-     * @param  string $content
+     *
+     * @param string $section
+     * @param string $content
+     *
      * @return void
      */
     public function startSection($section, $content = '')
@@ -1825,8 +2108,10 @@ class RadeViewManager
 
     /**
      * Append content to a given section.
-     * @param  string $section
-     * @param  string $content
+     *
+     * @param string $section
+     * @param string $content
+     *
      * @return void
      */
     protected function extendSection($section, $content)
@@ -1841,7 +2126,9 @@ class RadeViewManager
 
     /**
      * Stop injecting content into a section.
-     * @param  bool $overwrite
+     *
+     * @param bool $overwrite
+     *
      * @return string
      */
     public function stopSection($overwrite = false)
@@ -1855,13 +2142,16 @@ class RadeViewManager
         } else {
             $this->extendSection($last, ob_get_clean());
         }
+
         return $last;
     }
 
     /**
      * Stop injecting content into a section and append it.
-     * @return string
+     *
      * @throws \InvalidArgumentException
+     *
+     * @return string
      */
     public function appendSection()
     {
@@ -1874,19 +2164,23 @@ class RadeViewManager
         } else {
             $this->sections[$last] = ob_get_clean();
         }
+
         return $last;
     }
 
     /**
      * Get the string contents of a section.
-     * @param  string $section
-     * @param  string $default
+     *
+     * @param string $section
+     * @param string $default
+     *
      * @return string
      */
     public function yieldContent($section, $default = '')
     {
         if (isset($this->sections[$section])) {
             $content = str_replace($this->PARENTKEY, $default, $this->sections[$section]);
+
             return $content;
         } else {
             return $default;
@@ -1895,7 +2189,9 @@ class RadeViewManager
 
     /**
      * Register a custom Blade compiler.
-     * @param  callable $compiler
+     *
+     * @param callable $compiler
+     *
      * @return void
      */
     public function extend(callable $compiler)
@@ -1905,32 +2201,39 @@ class RadeViewManager
 
     /**
      * Register a handler for custom directives.
-     * @param  string $name
-     * @param  callable $handler
+     *
+     * @param string   $name
+     * @param callable $handler
+     *
      * @return void
      */
     public function directive($name, callable $handler)
     {
         $this->customDirectives[$name] = $handler;
-        $this->customDirectivesRT[$name]=false;
+        $this->customDirectivesRT[$name] = false;
     }
+
     /**
-     * Register a handler for custom directives for run at runtime
-     * @param  string $name
-     * @param  callable $handler
+     * Register a handler for custom directives for run at runtime.
+     *
+     * @param string   $name
+     * @param callable $handler
+     *
      * @return void
      */
     public function directiveRT($name, callable $handler)
     {
         $this->customDirectives[$name] = $handler;
-        $this->customDirectivesRT[$name]=true;
+        $this->customDirectivesRT[$name] = true;
     }
 
     /**
      * Sets the content tags used for the compiler.
-     * @param  string $openTag
-     * @param  string $closeTag
-     * @param  bool $escaped
+     *
+     * @param string $openTag
+     * @param string $closeTag
+     * @param bool   $escaped
+     *
      * @return void
      */
     public function setContentTags($openTag, $closeTag, $escaped = false)
@@ -1941,8 +2244,10 @@ class RadeViewManager
 
     /**
      * Sets the escaped content tags used for the compiler.
-     * @param  string $openTag
-     * @param  string $closeTag
+     *
+     * @param string $openTag
+     * @param string $closeTag
+     *
      * @return void
      */
     public function setEscapedContentTags($openTag, $closeTag)
@@ -1952,6 +2257,7 @@ class RadeViewManager
 
     /**
      * Gets the content tags used for the compiler.
+     *
      * @return array
      */
     public function getContentTags()
@@ -1961,6 +2267,7 @@ class RadeViewManager
 
     /**
      * Gets the escaped content tags used for the compiler.
+     *
      * @return array
      */
     public function getEscapedContentTags()
@@ -1970,17 +2277,21 @@ class RadeViewManager
 
     /**
      * Gets the tags used for the compiler.
-     * @param  bool $escaped
+     *
+     * @param bool $escaped
+     *
      * @return array
      */
     protected function getTags($escaped = false)
     {
         $tags = $escaped ? $this->escapedTags : $this->contentTags;
+
         return array_map('stripcslashes', $tags);
     }
 
     /**
      * Sets the function used for resolving classes with inject.
+     *
      * @param callable $function
      */
     public function setInjectResolver(callable $function)
@@ -1990,8 +2301,10 @@ class RadeViewManager
 
     /**
      * Resolve a given class using the injectResolver callable.
-     * @param string $className
+     *
+     * @param string      $className
      * @param string|null $variableName
+     *
      * @return mixed
      */
     protected function injectClass($className, $variableName = null)
@@ -1999,15 +2312,20 @@ class RadeViewManager
         if (isset($this->injectResolver)) {
             return call_user_func_array($this->injectResolver, [$className, $variableName]);
         } else {
-            $fullClassName = $className."\\".$variableName;
+            $fullClassName = $className.'\\'.$variableName;
+
             return new $fullClassName();
         }
     }
+
     //</editor-fold>
     //<editor-fold desc="file members">
+
     /**
      * Get the full path of the compiled file.
+     *
      * @param string $templateName
+     *
      * @return string
      */
     public function getCompiledFile($templateName = '')
@@ -2022,7 +2340,9 @@ class RadeViewManager
 
     /**
      * Get the full path of the compiled file.
+     *
      * @param string $templateName template name. If not template is set then it uses the base template.
+     *
      * @return string
      */
     public function getTemplateFile($templateName = '')
@@ -2036,33 +2356,40 @@ class RadeViewManager
             $file = $arr[$c - 1];
             array_splice($arr, $c - 1, $c - 1); // delete the last element
             $path = implode('/', $arr);
+
             return $this->locateTemplate($path.'/'.$file.$this->fileExtension);
         }
     }
 
     /**
-     * Find template file with the given name in all template paths in the order the paths were written
+     * Find template file with the given name in all template paths in the order the paths were written.
+     *
      * @param string $name Filename
+     *
      * @return string template file
      */
-    private function locateTemplate($name){
-        if(is_array($this->templatePath)) {
+    private function locateTemplate($name)
+    {
+        if (is_array($this->templatePath)) {
             $path = '';
-            foreach ($this->templatePath as $dir){
+            foreach ($this->templatePath as $dir) {
                 $path = $dir.'/'.$name;
-                if(file_exists($path)){
+                if (file_exists($path)) {
                     break;
                 }
             }
+
             return $path;
-        }else{
+        } else {
             return $this->templatePath.'/'.$name;
         }
     }
 
     /**
      * Determine if the view  is expired.
+     *
      * @param string|null $fileName
+     *
      * @return bool
      */
     public function isExpired($fileName)
@@ -2070,10 +2397,10 @@ class RadeViewManager
         $compiled = $this->getCompiledFile($fileName);
         $template = $this->getTemplateFile($fileName);
         if (!file_exists($template)) {
-            if ($this->mode==self::MODE_DEBUG) {
-                $this->showError("Read file", "Template not found :".$this->fileName." on file: $template", true);
+            if ($this->mode == self::MODE_DEBUG) {
+                $this->showError('Read file', 'Template not found :'.$this->fileName." on file: $template", true);
             } else {
-                $this->showError("Read file", "Template not found :".$this->fileName, true);
+                $this->showError('Read file', 'Template not found :'.$this->fileName, true);
             }
         }
         // If the compiled file doesn't exist we will indicate that the view is expired
@@ -2082,34 +2409,44 @@ class RadeViewManager
         if (!$this->compiledPath || !file_exists($compiled)) {
             return true;
         }
+
         return filemtime($compiled) < filemtime($template);
     }
 
     /**
-     * Returns true if the template exists. Otherwise it returns false
+     * Returns true if the template exists. Otherwise it returns false.
+     *
      * @param $templateName
+     *
      * @return bool
      */
     private function templateExist($templateName)
     {
         $file = $this->getTemplateFile($templateName);
+
         return file_exists($file);
     }
 
     /**
      * Get the contents of a file.
+     *
      * @param $fileName
+     *
      * @return string
      */
     public function getFile($fileName)
     {
-        if (is_file($fileName)) return file_get_contents($fileName);
+        if (is_file($fileName)) {
+            return file_get_contents($fileName);
+        }
         $this->showError('getFile', "File does not exist at path {$fileName}", true);
+
         return '';
     }
 
     /**
      * Get the file extension for template files.
+     *
      * @return string
      */
     public function getFileExtension()
@@ -2119,7 +2456,8 @@ class RadeViewManager
 
     /**
      * Set the file extension for the template files.
-     * Including the leading dot for the extension is required, e.g. .blade.php
+     * Including the leading dot for the extension is required, e.g. .blade.php.
+     *
      * @param $fileExtension
      */
     public function setFileExtension($fileExtension)
@@ -2129,6 +2467,7 @@ class RadeViewManager
 
     /**
      * Get the file extension for template files.
+     *
      * @return string
      */
     public function getCompiledExtension()
@@ -2138,7 +2477,8 @@ class RadeViewManager
 
     /**
      * Set the file extension for the compiled files.
-     * Including the leading dot for the extension is required, e.g. .bladec
+     * Including the leading dot for the extension is required, e.g. .bladec.
+     *
      * @param $fileExtension
      */
     public function setCompiledExtension($fileExtension)
@@ -2149,8 +2489,10 @@ class RadeViewManager
     /**
      * @param $compiledFile
      * @param $variables
-     * @return string
+     *
      * @throws Debugger
+     *
+     * @return string
      */
     protected function evaluatePath($compiledFile, $variables)
     {
@@ -2165,27 +2507,36 @@ class RadeViewManager
         } catch (\Debugger $e) {
             $this->handleViewDebugger($e);
         }
+
         return ltrim(ob_get_clean());
     }
 
     /**
      * Handle a view Debugger.
-     * @param  \Debugger $e
-     * @return void
+     *
+     * @param \Debugger $e
+     *
      * @throws $e
+     *
+     * @return void
      */
     protected function handleViewDebugger($e)
     {
         ob_get_clean();
+
         throw $e;
     }
+
     //</editor-fold>
     //<editor-fold desc="Array Functions">
+
     /**
      * Get an item from an array using "dot" notation.
-     * @param  \ArrayAccess|array $array
-     * @param  string $key
-     * @param  mixed $default
+     *
+     * @param \ArrayAccess|array $array
+     * @param string             $key
+     * @param mixed              $default
+     *
      * @return mixed
      */
     public static function get($array, $key, $default = null)
@@ -2207,13 +2558,16 @@ class RadeViewManager
                 return static::value($default);
             }
         }
+
         return $array;
     }
 
     /**
      * Determine if the given key exists in the provided array.
-     * @param  \ArrayAccess|array $array
-     * @param  string|int $key
+     *
+     * @param \ArrayAccess|array $array
+     * @param string|int         $key
+     *
      * @return bool
      */
     public static function exists($array, $key)
@@ -2221,14 +2575,17 @@ class RadeViewManager
         if ($array instanceof ArrayAccess) {
             return $array->offsetExists($key);
         }
+
         return array_key_exists($key, $array);
     }
 
     /**
      * Return the first element in an array passing a given truth test.
-     * @param  array $array
-     * @param  callable|null $callback
-     * @param  mixed $default
+     *
+     * @param array         $array
+     * @param callable|null $callback
+     * @param mixed         $default
+     *
      * @return mixed
      */
     public static function first($array, callable $callback = null, $default = null)
@@ -2241,14 +2598,17 @@ class RadeViewManager
                 return $value;
             }
         }
+
         return static::value($default);
     }
 
     /**
      * Return the last element in an array passing a given truth test.
-     * @param  array $array
-     * @param  callable|null $callback
-     * @param  mixed $default
+     *
+     * @param array         $array
+     * @param callable|null $callback
+     * @param mixed         $default
+     *
      * @return mixed
      */
     public static function last($array, callable $callback = null, $default = null)
@@ -2256,19 +2616,24 @@ class RadeViewManager
         if (is_null($callback)) {
             return empty($array) ? static::value($default) : end($array);
         }
+
         return static::first(array_reverse($array), $callback, $default);
     }
+
     //</editor-fold>
     //<editor-fold desc="string functions">
+
     /**
      * Determine if a given string contains a given substring.
-     * @param  string $haystack
-     * @param  string|array $needles
+     *
+     * @param string       $haystack
+     * @param string|array $needles
+     *
      * @return bool
      */
     public static function contains($haystack, $needles)
     {
-        foreach ((array)$needles as $needle) {
+        foreach ((array) $needles as $needle) {
             if (function_exists('mb_strpos')) {
                 if ($needle != '' && mb_strpos($haystack, $needle) !== false) {
                     return true;
@@ -2285,7 +2650,9 @@ class RadeViewManager
 
     /**
      * Strip the parentheses from the given expression.
-     * @param  string $expression
+     *
+     * @param string $expression
+     *
      * @return string
      */
     protected function stripParentheses($expression)
@@ -2293,29 +2660,35 @@ class RadeViewManager
         if (static::startsWith($expression, '(')) {
             $expression = substr($expression, 1, -1);
         }
+
         return $expression;
     }
 
     /**
-     * Remove first and end quote from a quoted string of text
+     * Remove first and end quote from a quoted string of text.
+     *
      * @param mixed $text
+     *
      * @return null|string|string[]
      */
     protected function stripQuotes($text)
     {
         $unquoted = preg_replace('/^(\'(.*)\'|"(.*)")$/', '$2$3', trim($text));
+
         return $unquoted;
     }
 
     /**
      * Determine if a given string starts with a given substring.
-     * @param  string $haystack
-     * @param  string|array $needles
+     *
+     * @param string       $haystack
+     * @param string|array $needles
+     *
      * @return bool
      */
     public static function startsWith($haystack, $needles)
     {
-        foreach ((array)$needles as $needle) {
+        foreach ((array) $needles as $needle) {
             if (function_exists('mb_strpos')) {
                 if ($needle != '' && mb_strpos($haystack, $needle) === 0) {
                     return true;
@@ -2324,7 +2697,6 @@ class RadeViewManager
                 if ($needle != '' && strpos($haystack, $needle) === 0) {
                     return true;
                 }
-
             }
         }
 
@@ -2333,7 +2705,9 @@ class RadeViewManager
 
     /**
      * Return the default value of the given value.
-     * @param  mixed $value
+     *
+     * @param mixed $value
+     *
      * @return mixed
      */
     public static function value($value)
@@ -2343,21 +2717,28 @@ class RadeViewManager
 
     /**
      * Escape HTML entities in a string.
-     * @param  string $value
+     *
+     * @param string $value
+     *
      * @return string
      */
     public static function e($value)
     {
         if (is_array($value) || is_object($value)) {
-            return htmlentities(print_r($value,true), ENT_QUOTES, 'UTF-8', false);
+            return htmlentities(print_r($value, true), ENT_QUOTES, 'UTF-8', false);
         }
+
         return htmlentities($value, ENT_QUOTES, 'UTF-8', false);
     }
+
     //</editor-fold>
     //<editor-fold desc="loop functions">
+
     /**
      * Add new loop to the stack.
-     * @param  array|\Countable $data
+     *
+     * @param array|\Countable $data
+     *
      * @return void
      */
     public function addLoop($data)
@@ -2365,18 +2746,19 @@ class RadeViewManager
         $length = is_array($data) || $data instanceof Countable ? count($data) : null;
         $parent = static::last($this->loopsStack);
         $this->loopsStack[] = [
-            'index' => 0,
+            'index'     => 0,
             'remaining' => isset($length) ? $length + 1 : null,
-            'count' => $length,
-            'first' => true,
-            'last' => isset($length) ? $length == 1 : null,
-            'depth' => count($this->loopsStack) + 1,
-            'parent' => $parent ? (object)$parent : null,
+            'count'     => $length,
+            'first'     => true,
+            'last'      => isset($length) ? $length == 1 : null,
+            'depth'     => count($this->loopsStack) + 1,
+            'parent'    => $parent ? (object) $parent : null,
         ];
     }
 
     /**
      * Increment the top loop's indices.
+     *
      * @return void
      */
     public function incrementLoopIndices()
@@ -2392,6 +2774,7 @@ class RadeViewManager
 
     /**
      * Pop a loop from the top of the loop stack.
+     *
      * @return void
      */
     public function popLoop()
@@ -2401,15 +2784,17 @@ class RadeViewManager
 
     /**
      * Get an instance of the first loop in the stack.
+     *
      * @return array|object
      */
     public function getFirstLoop()
     {
-        return ($last = static::last($this->loopsStack)) ? (object)$last : null;
+        return ($last = static::last($this->loopsStack)) ? (object) $last : null;
     }
 
     /**
      * Get the entire loop stack.
+     *
      * @return array
      */
     public function getLoopStack()
@@ -2419,12 +2804,15 @@ class RadeViewManager
 
     /**
      * Get the rendered contents of a partial from a loop.
-     * @param  string $view
-     * @param  array $data
-     * @param  string $iterator
-     * @param  string $empty
-     * @return string
+     *
+     * @param string $view
+     * @param array  $data
+     * @param string $iterator
+     * @param string $empty
+     *
      * @throws Debugger
+     *
+     * @return string
      */
     public function renderEach($view, $data, $iterator, $empty = 'raw|')
     {
@@ -2448,30 +2836,36 @@ class RadeViewManager
                 $result = $this->run($empty, []);
             }
         }
+
         return $result;
     }
 
     /**
      * Show an error in the web.
-     * @param string $id Title of the error
-     * @param string $text Message of the error
-     * @param bool $critic if true then the compilation is ended, otherwise it continues
+     *
+     * @param string $id     Title of the error
+     * @param string $text   Message of the error
+     * @param bool   $critic if true then the compilation is ended, otherwise it continues
+     *
      * @return string
      */
     public function showError($id, $text, $critic = false)
     {
         ob_get_clean();
-        Debugger::display('simple',$id.' error',$text);
+        Debugger::display('simple', $id.' error', $text);
         if ($critic) {
             die(1);
         }
-        return "";
+
+        return '';
     }
 
     /**
      * Start a component rendering process.
-     * @param  string $name
-     * @param  array $data
+     *
+     * @param string $name
+     * @param array  $data
+     *
      * @return void
      */
     public function startComponent($name, array $data = [])
@@ -2487,17 +2881,21 @@ class RadeViewManager
 
     /**
      * Render the current component.
-     * @return string
+     *
      * @throws Debugger
+     *
+     * @return string
      */
     public function renderComponent()
     {
         $name = array_pop($this->componentStack);
+
         return $this->runChild($name, $this->componentData());
     }
 
     /**
      * Get the data for the given component.
+     *
      * @return array
      */
     protected function componentData()
@@ -2511,8 +2909,10 @@ class RadeViewManager
 
     /**
      * Start the slot rendering process.
-     * @param  string $name
-     * @param  string|null $content
+     *
+     * @param string      $name
+     * @param string|null $content
+     *
      * @return void
      */
     public function slot($name, $content = null)
@@ -2530,6 +2930,7 @@ class RadeViewManager
 
     /**
      * Save the slot content for rendering.
+     *
      * @return void
      */
     public function endSlot()
@@ -2540,12 +2941,12 @@ class RadeViewManager
             $this->slotStack[$this->currentComponent()]
         );
 
-        $this->slots[$this->currentComponent()]
-        [$currentSlot] = trim(ob_get_clean());
+        $this->slots[$this->currentComponent()][$currentSlot] = trim(ob_get_clean());
     }
 
     /**
      * Get the index for the current component.
+     *
      * @return int
      */
     protected function currentComponent()
@@ -2553,8 +2954,5 @@ class RadeViewManager
         return count($this->componentStack) - 1;
     }
 
-
     //</editor-fold>
-
-
 }

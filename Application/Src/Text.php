@@ -8,7 +8,7 @@ class Text
     {
         // if not $key
         if (!$key) {
-            return null;
+            return;
         }
 
         if ($data) {
@@ -19,12 +19,12 @@ class Text
 
         // load config file (this is only done once per application lifecycle)
         if (!self::$texts) {
-            self::$texts = require(BR_PATH.'Config/feedback.phtml');
+            self::$texts = require BR_PATH.'Config/feedback.phtml';
         }
 
         // check if array key exists
         if (!array_key_exists($key, self::$texts)) {
-            return null;
+            return;
         }
 
         return self::$texts[$key];

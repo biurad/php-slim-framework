@@ -29,10 +29,10 @@ TimeTrackr::init();
 | maintaining only one instantiation of a class.
 |
 */
-$app = new App;
+$app = new App();
 //$app->ajax_check(false);
-$db = new Rlis\RadeBase\RadeBaseManager;
-$cache = new Radion\Cache;
+$db = new Rlis\RadeBase\RadeBaseManager();
+$cache = new Radion\Cache();
 
 /*
 |--------------------------------------------------------------------------
@@ -103,6 +103,6 @@ Router::dispatch();
 | config/env.php)
 |
 */
-if(getenv('SHOW_EXECUTION_TIME')){
+if (getenv('SHOW_EXECUTION_TIME')) {
     Debugger::exec_time();
 }

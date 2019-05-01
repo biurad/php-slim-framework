@@ -1,6 +1,6 @@
 <error-handler>
 	<debugger-type-default>
-		<style type="text/css"><?php include('full.css'); ?></style>
+		<style type="text/css"><?php include 'full.css'; ?></style>
 		<header>
 			<div class="exception">
 				<div class="exc-message">

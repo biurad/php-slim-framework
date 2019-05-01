@@ -9,7 +9,7 @@
 | the autoloader very well. Good guy Composer.
 |
 */
-require dirname(__DIR__) . '/Vendor/autoload.php';
+require dirname(__DIR__).'/Vendor/autoload.php';
 
 /*
 |--------------------------------------------------------------------------
@@ -17,7 +17,7 @@ require dirname(__DIR__) . '/Vendor/autoload.php';
 |--------------------------------------------------------------------------
 |
 | Reads the config file (config/env.php) and register it in using the
-| putenv() function. Configurations are retreivable using the getenv() 
+| putenv() function. Configurations are retreivable using the getenv()
 | function everywhere in the project.
 |
 */
@@ -29,8 +29,8 @@ Radion\Config::setEnv();
 |--------------------------------------------------------------------------
 |
 | The debugging tool will register the error handler based on your
-| configuration (located at config/env.php). 
+| configuration (located at config/env.php).
 |
 */
-$debug = new Radion\Debugger;
+$debug = new Radion\Debugger();
 $debug->start();

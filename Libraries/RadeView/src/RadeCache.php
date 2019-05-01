@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Rlis\RadeView;
 
 /**
@@ -8,7 +7,8 @@ namespace Rlis\RadeView;
  * Copyright (c) 2016 BiuStudio Ghana MIT License. Don't delete this comment, its part of the license.
  * Extends the tags of the class RadeView.  Its optional
  * It adds the next tags to the template
- * <code>
+ * <code>.
+ *
  * @ cache([cacheid],[duration=86400]).  The id is optional. The duration of the cache is in seconds
  * // content here
  * @ endcache()
@@ -19,20 +19,23 @@ namespace Rlis\RadeView;
  *    // cache expired, so we should do some stuff (such as read from the database)
  * }
  * </code>
- * @package  RadeViewCache
+ *
  * @version 1.40 2019-01-18
+ *
  * @link https://github.com/biustudios/radeview
+ *
  * @author   BiuStudio Ghana
  */
-trait RadeViewManagerCache
+trait RadeCache
 {
-    var $curCacheId=0;
-    var $curCacheDuration="";
-    var $curCachePosition=0;
-    var $cacheRunning=false;
-    private $cacheExpired=[]; // avoids to compare the file different times.
+    public $curCacheId = 0;
+    public $curCacheDuration = '';
+    public $curCachePosition = 0;
+    public $cacheRunning = false;
+    private $cacheExpired = []; // avoids to compare the file different times.
 
-    public function compileCache($expression) {
+    public function compileCache($expression)
+    {
         // get id of template
         // if the file exists then
         //     compare date.
@@ -42,18 +45,23 @@ trait RadeViewManagerCache
 
         return $this->phpTag."echo \$this->cacheStart{$expression}; if(!\$this->cacheRunning) { ?>";
     }
-    public function compileEndCache($expression) {
+
+    public function compileEndCache($expression)
+    {
         return $this->phpTag."} // if cacheRunning\necho \$this->cacheEnd{$expression}; ?>";
     }
 
     /**
      * Returns true if the cache expired (or doesn't exist), otherwise false.
-     * @param string $templateName name of the template to use (such hello for template hello.blade.php)
-     * @param string $id (id of cache, optional, if not id then it adds automatically a number)
-     * @param int $cacheDuration (duration of the cache in seconds)
+     *
+     * @param string $templateName  name of the template to use (such hello for template hello.blade.php)
+     * @param string $id            (id of cache, optional, if not id then it adds automatically a number)
+     * @param int    $cacheDuration (duration of the cache in seconds)
+     *
      * @return bool (return if the cache expired)
      */
-    public function cacheExpired($templateName,$id,$cacheDuration) {
+    public function cacheExpired($templateName, $id, $cacheDuration)
+    {
         if ($this->getMode() & 1) {
             return true; // forced mode, hence it always expires. (fast mode is ignored).
         }
@@ -62,41 +70,46 @@ trait RadeViewManagerCache
             // if the information is already in the array then returns it.
             return $this->cacheExpired[$compiledFile];
         }
-        $date=@filemtime($compiledFile);
+        $date = @filemtime($compiledFile);
         if ($date) {
-            if ($date+$cacheDuration <time()) {
-                $this->cacheExpired[$compiledFile]=true;
+            if ($date + $cacheDuration < time()) {
+                $this->cacheExpired[$compiledFile] = true;
+
                 return true; // time-out.
             }
         } else {
-            $this->cacheExpired[$compiledFile]=true;
+            $this->cacheExpired[$compiledFile] = true;
+
             return true; // no file
         }
-        $this->cacheExpired[$compiledFile]=false;
+        $this->cacheExpired[$compiledFile] = false;
+
         return false; // cache active.
     }
-    public function cacheStart($id="",$cacheDuration=86400) {
 
-        $this->curCacheId=($id=="")?($this->curCacheId+1):$id;
-        $this->curCacheDuration=$cacheDuration;
-        $this->curCachePosition=strlen(ob_get_contents());
+    public function cacheStart($id = '', $cacheDuration = 86400)
+    {
+        $this->curCacheId = ($id == '') ? ($this->curCacheId + 1) : $id;
+        $this->curCacheDuration = $cacheDuration;
+        $this->curCachePosition = strlen(ob_get_contents());
         $compiledFile = $this->getCompiledFile().'_cache'.$this->curCacheId;
-        if ($this->cacheExpired('',$id,$cacheDuration)) {
-            $this->cacheRunning=false;
+        if ($this->cacheExpired('', $id, $cacheDuration)) {
+            $this->cacheRunning = false;
         } else {
-            $this->cacheRunning=true;
-            $content=$this->getFile($compiledFile);
+            $this->cacheRunning = true;
+            $content = $this->getFile($compiledFile);
             echo $content;
         }
         // getFile($fileName)
     }
-    public function cacheEnd() {
 
+    public function cacheEnd()
+    {
         if (!$this->cacheRunning) {
             $txt = substr(ob_get_contents(), $this->curCachePosition);
-            $compiledFile = $this->getCompiledFile() . '_cache' . $this->curCacheId;
+            $compiledFile = $this->getCompiledFile().'_cache'.$this->curCacheId;
             file_put_contents($compiledFile, $txt);
         }
-        $this->cacheRunning=false;
+        $this->cacheRunning = false;
     }
 }

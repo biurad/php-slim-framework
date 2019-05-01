@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Class DatabaseFactory
+ * Class DatabaseFactory.
  *
  * Use it like this:
  * $database = DatabaseFactory::getFactory()->getConnection();
@@ -27,8 +27,9 @@ class DatabaseFactory
     public static function getFactory()
     {
         if (!self::$factory) {
-            self::$factory = new DatabaseFactory();
+            self::$factory = new self();
         }
+
         return self::$factory;
     }
 
@@ -36,31 +37,32 @@ class DatabaseFactory
     {
         if (!$this->database) {
 
-            /**
+            /*
              * Check DB connection in try/catch block. Also when PDO is not constructed properly,
              * prevent to exposing database host, username and password in plain text as:
              * PDO->__construct('mysql:host=127....', 'root', '12345678', Array)
              * by throwing custom error message
              */
             try {
-                $options = array(PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ, PDO::ATTR_ERRMODE => PDO::ERRMODE_WARNING);
+                $options = [PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ, PDO::ATTR_ERRMODE => PDO::ERRMODE_WARNING];
                 $this->database = new PDO(
-                    Config::get('database','driver') . ':host=' . Config::get('database','host') . ';dbname=' .
-                        Config::get('database','database') . ';port=' . Config::get('database','port') . ';charset=' . Config::get('database','charset'),
-                    Config::get('database','username'),
-                    Config::get('database','password'),
+                    Config::get('database', 'driver').':host='.Config::get('database', 'host').';dbname='.
+                        Config::get('database', 'database').';port='.Config::get('database', 'port').';charset='.Config::get('database', 'charset'),
+                    Config::get('database', 'username'),
+                    Config::get('database', 'password'),
                     $options
                 );
             } catch (PDOException $e) {
 
                 // Echo custom message. Echo error code gives you some info.
-                Debugger::display('Hmmmmm!','Database connection can not be estabilished Error code: '.$e->getCode());
+                Debugger::display('Hmmmmm!', 'Database connection can not be estabilished Error code: '.$e->getCode());
 
                 // Stop application :(
                 // No connection, reached limit connections etc. so no point to keep it running
                 exit;
             }
         }
+
         return $this->database;
     }
 }

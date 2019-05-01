@@ -1,15 +1,15 @@
-<?php 
+<?php
 
 namespace Service\Api;
 
 use function time;
 
-class PingHandler
+class PingService
 {
     public function handle()
     {
         $hi = json_encode(['rade-api-ping' => time()]);
-        echo ($hi);
+        echo $hi;
         header('Access-Control-Allow-Origin: *');
         header('Content-Type: application/json');
     }

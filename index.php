@@ -1,7 +1,7 @@
 <?php
 /*
         This code is under MIT License
-        
+
         +--------------------------------+
         |   DO NOT MODIFY THIS HEADERS   |
         +--------------------------------+-----------------+
@@ -13,25 +13,25 @@
         |   Copyright Copyright (c) 2018-2019 BiuStudio    |
         |   License: https://biurad.tk/LICENSE.md          |
         +--------------------------------------------------+
-        
+
         +--------------------------------------------------------------------------------+
         |   Version: 0.0.1.1, Relased at 18/02/2019 13:13 (GMT + 1.00)                       |
         +--------------------------------------------------------------------------------+
-        
+
         +----------------+
         |   Tested on    |
         +----------------+-----+
         |  APACHE => 2.0.55    |
         |     PHP => 5.4       |
         +----------------------+
-        
+
         +---------------------+
         |  How to report bug  |
         +---------------------+-----------------------------------------------------------------+
         |   You can e-mail me using the email addres written above. That email is also my msn   |
         |   contact, so you can use it for contact me on MSN.                                   |
         +---------------------------------------------------------------------------------------+
-        
+
         +-----------+
         |  Notes    |
         +-----------+------------------------------------------------------------------------------------------------+
@@ -50,7 +50,7 @@
         |     <--+ Proper security features, like CSRF blocking (via form tokens), encryption of cookie contents etc.|
         |   - Fits PSR-0/1/2/4 coding guideline.                                                                     |
         +------------------------------------------------------------------------------------------------------------+
-        
+
         +------------------+
         |  Special Thanks  |
         +------------------+-----------------------------------------------------------------------------------------+
@@ -82,7 +82,7 @@ define('BR_START', microtime(true));
 | bit)
 |
 */
-define('BR_PATH', realpath(dirname(__FILE__)) .'/');
+define('BR_PATH', realpath(dirname(__FILE__)).'/');
 
 /*
 |--------------------------------------------------------------------------
@@ -90,12 +90,12 @@ define('BR_PATH', realpath(dirname(__FILE__)) .'/');
 |--------------------------------------------------------------------------
 |
 | In this file we will register the Autoloader from Composer. Environment
-| variables (that you set on config/env.php) will be registered this time. 
+| variables (that you set on config/env.php) will be registered this time.
 | Our sweet debugging tool will also be loaded to track errors as earlier
 | as possible.
 |
 */
-require_once(BR_PATH.'Application/autoloader.php');
+require_once BR_PATH.'Application/autoloader.php';
 
 /*
 |--------------------------------------------------------------------------
@@ -106,4 +106,4 @@ require_once(BR_PATH.'Application/autoloader.php');
 | manager and routing runs perfectly well.
 |
 */
-require_once(BR_PATH.'Application/bootstrap.php');
+require_once BR_PATH.'Application/bootstrap.php';

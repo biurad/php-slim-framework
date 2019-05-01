@@ -3,12 +3,11 @@
 use Radion\Request;
 
 /**
- * Cross Site Request Forgery Class
- *
+ * Cross Site Request Forgery Class.
  */
 
 /**
- * Instructions:
+ * Instructions:.
  *
  * At your form, before the submit button put:
  * <input type="hidden" name="csrf_token" value="<?= Csrf::makeToken(); ?>" />
@@ -26,18 +25,18 @@ use Radion\Request;
 class Csrf
 {
     /**
-     * get CSRF token and generate a new one if expired
+     * get CSRF token and generate a new one if expired.
      *
-     * @access public
      * @static static method
+     *
      * @return string
      */
     public static function makeToken()
     {
         // token is valid for 1 day
-        $max_time    = 60 * 60 * 24;
+        $max_time = 60 * 60 * 24;
         $stored_time = \Session::get('csrf_token_time');
-        $csrf_token  = \Session::get('csrf_token');
+        $csrf_token = \Session::get('csrf_token');
 
         if ($max_time + $stored_time <= time() || empty($csrf_token)) {
             \Session::set('csrf_token', md5(uniqid(rand(), true)));
@@ -48,15 +47,16 @@ class Csrf
     }
 
     /**
-     * checks if CSRF token in session is same as in the form submitted
+     * checks if CSRF token in session is same as in the form submitted.
      *
-     * @access public
      * @static static method
+     *
      * @return bool
      */
     public static function isTokenValid()
     {
         $token = \Request::post('csrf_token');
+
         return $token === \Session::get('csrf_token') && !empty($token);
     }
 }

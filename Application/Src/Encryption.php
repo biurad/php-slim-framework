@@ -3,21 +3,19 @@
 use Radion\Config;
 
 /**
- * Encryption and Decryption Class
- *
+ * Encryption and Decryption Class.
  */
 class Encryption
 {
-
     /**
-     * Cipher algorithm
+     * Cipher algorithm.
      *
      * @var string
      */
     const CIPHER = 'aes-256-cbc';
 
     /**
-     * Hash function
+     * Hash function.
      *
      * @var string
      */
@@ -25,20 +23,21 @@ class Encryption
 
     /**
      * constructor for Encryption object.
-     *
-     * @access private
      */
     private function __construct()
-    { }
+    {
+    }
 
     /**
      * Encrypt a string.
      *
-     * @access public
      * @static static method
-     * @param  string $plain
-     * @return string
+     *
+     * @param string $plain
+     *
      * @throws Exception If functions don't exists
+     *
+     * @return string
      */
     public static function encrypt($plain)
     {
@@ -47,7 +46,6 @@ class Encryption
             !function_exists('openssl_random_pseudo_bytes') ||
             !function_exists('openssl_encrypt')
         ) {
-
             throw new Exception('Encryption function doesn\'t exist');
         }
 
@@ -58,26 +56,28 @@ class Encryption
         $iv = openssl_random_pseudo_bytes($iv_size);
 
         // generate key for authentication using ENCRYPTION_KEY & HMAC_SALT
-        $key = mb_substr(hash(self::HASH_FUNCTION, Config::get('custom','ENCRYPTION_KEY') . Config::get('custom','HMAC_SALT')), 0, 32, '8bit');
+        $key = mb_substr(hash(self::HASH_FUNCTION, Config::get('custom', 'ENCRYPTION_KEY').Config::get('custom', 'HMAC_SALT')), 0, 32, '8bit');
 
         // append initialization vector
         $encrypted_string = openssl_encrypt($plain, self::CIPHER, $key, OPENSSL_RAW_DATA, $iv);
-        $ciphertext = $iv . $encrypted_string;
+        $ciphertext = $iv.$encrypted_string;
 
         // apply the HMAC
         $hmac = hash_hmac('sha256', $ciphertext, $key);
 
-        return $hmac . $ciphertext;
+        return $hmac.$ciphertext;
     }
 
     /**
      * Decrypted a string.
      *
-     * @access public
      * @static static method
-     * @param  string $ciphertext
-     * @return string
+     *
+     * @param string $ciphertext
+     *
      * @throws Exception If $ciphertext is empty, or If functions don't exists
+     *
+     * @return string
      */
     public static function decrypt($ciphertext)
     {
@@ -89,12 +89,11 @@ class Encryption
             !function_exists('openssl_cipher_iv_length') ||
             !function_exists('openssl_decrypt')
         ) {
-
             throw new Exception('Encryption function doesn\'t exist');
         }
 
         // generate key used for authentication using ENCRYPTION_KEY & HMAC_SALT
-        $key = mb_substr(hash(self::HASH_FUNCTION, Config::get('custom','ENCRYPTION_KEY') . Config::get('custom','HMAC_SALT')), 0, 32, '8bit');
+        $key = mb_substr(hash(self::HASH_FUNCTION, Config::get('custom', 'ENCRYPTION_KEY').Config::get('custom', 'HMAC_SALT')), 0, 32, '8bit');
 
         // split cipher into: hmac, cipher & iv
         $macSize = 64;
@@ -118,11 +117,13 @@ class Encryption
     /**
      * A timing attack resistant comparison.
      *
-     * @access private
      * @static static method
-     * @param string $hmac The hmac from the ciphertext being decrypted.
+     *
+     * @param string $hmac    The hmac from the ciphertext being decrypted.
      * @param string $compare The comparison hmac.
+     *
      * @return bool
+     *
      * @see https://github.com/sarciszewski/php-future/blob/bd6c91fb924b2b35a3e4f4074a642868bd051baf/src/Security.php#L36
      */
     private static function hashEquals($hmac, $compare)

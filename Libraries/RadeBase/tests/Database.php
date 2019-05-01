@@ -1,8 +1,8 @@
 <?php
 
-define('BR_PATH', realpath(dirname(__FILE__)) .'/');
-require('../src/RadeBaseLib.php');
-require('../vendor/autoload.php');
+define('BR_PATH', realpath(dirname(__FILE__)).'/');
+require '../src/RadeBaseLib.php';
+require '../vendor/autoload.php';
 
 use Librabries\RadeBase;
 use Radion\Debugger;
@@ -12,8 +12,7 @@ Debugger::start();
 $db = new RadeBase();
 $db->connect();
 
-
-$rows=<<<TAG
+$rows = <<<'TAG'
 INSERT INTO `cupcakes`.`cupcakes` (`Name`, `Image`, `Price`, `Description`) VALUES ('Chocolate', 'cupcake1.jpg', '20', 'Chocolate');
 INSERT INTO `cupcakes`.`cupcakes` (`Name`, `Image`, `Price`, `Description`) VALUES ('Cupcake Normal', 'cupcake2.jpg', '30', 'Cupcake Normal');
 INSERT INTO `cupcakes`.`cupcakes` (`Name`, `Image`, `Price`, `Description`) VALUES ('Gourmet', 'cupcake3.jpg', '35.5', 'Gourmet');

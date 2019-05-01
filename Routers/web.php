@@ -19,8 +19,8 @@
 | view files (home.php) into any directory within the project.
 |
 */
-Router::get('/', function() {
-	Viewer::file('frontend.welcome');
+Router::get('/', function () {
+    Viewer::file('frontend.welcome');
 });
 
 /*
@@ -42,7 +42,6 @@ Router::get('/', function() {
 |
 */
 
-
 /*
 |--------------------------------------------------------------------------
 | Lazy Routing - Route GET /(:any) into /(:any).php
@@ -52,8 +51,8 @@ Router::get('/', function() {
 | URI into any file.
 |
 */
-Router::get('/(:any)', function($match) {
-	Viewer::file('frontend/'.$match);
+Router::get('/(:any)', function ($match) {
+    Viewer::file('frontend/'.$match);
 });
 
 /*

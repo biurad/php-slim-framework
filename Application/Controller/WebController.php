@@ -5,18 +5,20 @@ namespace Controller;
 use Config;
 use Viewer;
 
-class Web
+class WebController
 {
-    public function handle() {
+    public function handle()
+    {
         Viewer::file('frontend.web');
     }
 
-    static function ClearCache() {
-        $path = BR_PATH.'Resources/' . Config::get('theme','storage_path').'/framework';
+    public static function ClearCache()
+    {
+        $path = BR_PATH.'Resources/'.Config::get('theme', 'storage_path').'/framework';
         if ($handle = opendir($path)) {
             while (false !== ($file = readdir($handle))) {
                 if (strripos($file, '.rade') !== false) {
-                    @unlink($path . '/' . $file);
+                    @unlink($path.'/'.$file);
                 }
             }
         }
