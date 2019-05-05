@@ -6,4 +6,4 @@ checks:
         duplication: true
 # test coverage is commented out as this does not seem to work properly right now
 #tools:
-#    external_code_coverage: true
+   external_code_coverage: true
