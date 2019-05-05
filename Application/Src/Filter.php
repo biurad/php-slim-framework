@@ -108,6 +108,11 @@ class Filter
         return $string;
     }
 
+    /**
+     * @param string $string
+     *
+     * @return string
+     */
     public static function cleanString($string)
     {
         return $string = preg_replace('/&#?[a-z0-9]+;/i', '', $string);
