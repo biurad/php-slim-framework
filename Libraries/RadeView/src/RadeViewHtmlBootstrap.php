@@ -232,7 +232,7 @@ trait RadeViewHtmlBootstrap
      *
      * @example addClass('type="text" class="btn","btn-standard")
      *
-     * @param string|array $txt
+     * @param string $txt
      * @param string       $newclass The class(es) to add, example "class1" or "class1 class"
      *
      * @return string

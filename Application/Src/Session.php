@@ -24,7 +24,7 @@ class Session
     /**
      * sets a specific value to a specific key of the session.
      *
-     * @param mixed $key   key
+     * @param string $key   key
      * @param mixed $value value
      */
     public static function set($key, $value)
@@ -35,7 +35,7 @@ class Session
     /**
      * gets/returns the value of a specific key of the session.
      *
-     * @param mixed $key Usually a string, right ?
+     * @param string $key Usually a string, right ?
      *
      * @return mixed the key's value or nothing
      */
@@ -141,7 +141,6 @@ class Session
     /**
      * Removes session variable.
      *
-     * @param string $name
      */
     public function remove($key)
     {

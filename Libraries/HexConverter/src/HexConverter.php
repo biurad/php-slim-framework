@@ -51,7 +51,7 @@ class HexConverter
     /**
      * Convert hex color to hsl.
      *
-     * @return array
+     * @return double[]
      */
     public function hsl()
     {
@@ -92,7 +92,7 @@ class HexConverter
     /**
      * Convert hex color to cmyk.
      *
-     * @return array
+     * @return double[]
      */
     public function cmyk()
     {
