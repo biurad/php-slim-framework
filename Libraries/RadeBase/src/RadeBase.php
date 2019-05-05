@@ -497,7 +497,7 @@ class RadeBase
      * @param $sqlField
      * @param bool $hasTime
      *
-     * @return bool|DateTime|null
+     * @return string
      */
     public static function dateTimeSql2PHP($sqlField, &$hasTime = false)
     {
@@ -603,7 +603,7 @@ class RadeBase
     /**
      * @param string|array $sql
      *
-     * @return RadeBaseManager
+     * @return RadeBase
      * @test InstanceOf RadeBaseManager::class,this('select 1 from DUAL')
      */
     public function select($sql)
@@ -622,7 +622,7 @@ class RadeBase
      *
      * @param string $sql Example "tablejoin on table1.field=tablejoin.field"
      *
-     * @return RadeBaseManager
+     * @return RadeBase
      * @test InstanceOf RadeBaseManager::class,this('tablejoin on t1.field=t2.field')
      */
     public function join($sql)
@@ -640,7 +640,7 @@ class RadeBase
      *
      * @param $sql
      *
-     * @return RadeBaseManager
+     * @return RadeBase
      */
     public function innerjoin($sql)
     {
@@ -650,7 +650,7 @@ class RadeBase
     /**
      * @param $sql
      *
-     * @return RadeBaseManager
+     * @return RadeBase
      * @test InstanceOf RadeBaseManager::class,this('table t1')
      */
     public function from($sql)
@@ -663,7 +663,7 @@ class RadeBase
     /**
      * @param $sql
      *
-     * @return RadeBaseManager
+     * @return RadeBase
      * @test InstanceOf RadeBaseManager::class,this('table2 on table1.t1=table2.t2')
      */
     public function left($sql)
@@ -679,7 +679,7 @@ class RadeBase
     /**
      * @param $sql
      *
-     * @return RadeBaseManager
+     * @return RadeBase
      * @test InstanceOf RadeBaseManager::class,this('table2 on table1.t1=table2.t2')
      */
     public function right($sql)
@@ -706,7 +706,7 @@ class RadeBase
      * @param string|array $sql
      * @param array|mixed  $param
      *
-     * @return RadeBaseManager
+     * @return RadeBase
      *
      * @see http://php.net/manual/en/mysqli-stmt.bind-param.php for types
      * @test InstanceOf RadeBaseManager::class,this('field1=?,field2=?',['i',20,'s','hello'])
@@ -759,7 +759,7 @@ class RadeBase
      *
      * @throws Debugger
      *
-     * @return RadeBaseManager
+     * @return RadeBase
      * @test InstanceOf RadeBaseManager::class,this('field1=?,field2=?',['i',20,'s','hello'])
      */
     public function set($sqlOrArray, $param = self::NULL)
@@ -803,7 +803,7 @@ class RadeBase
     /**
      * @param $sql
      *
-     * @return RadeBaseManager
+     * @return RadeBase
      * @test InstanceOf RadeBaseManager::class,this('fieldgroup')
      */
     public function group($sql)
@@ -817,7 +817,7 @@ class RadeBase
      * @param $sql
      * @param array|mixed $param
      *
-     * @return RadeBaseManager
+     * @return RadeBase
      * @test InstanceOf RadeBaseManager::class,this('field1=?,field2=?',['i',20,'s','hello'])
      * * @test InstanceOf RadeBaseManager::class,this('field1=?','hello')
      */
@@ -845,7 +845,7 @@ class RadeBase
     /**
      * @param $sql
      *
-     * @return RadeBaseManager
+     * @return RadeBase
      * @test InstanceOf RadeBaseManager::class,this('name desc')
      */
     public function order($sql)
@@ -858,7 +858,7 @@ class RadeBase
     /**
      * @param $sql
      *
-     * @return RadeBaseManager
+     * @return RadeBase
      * @test InstanceOf RadeBaseManager::class,this('1,10')
      */
     public function limit($sql)
@@ -871,7 +871,7 @@ class RadeBase
     /**
      * @param $sql
      *
-     * @return RadeBaseManager
+     * @return RadeBase
      * @test InstanceOf RadeBaseManager::class,this()
      */
     public function distinct($sql = 'distinct')
@@ -996,7 +996,7 @@ class RadeBase
     }
 
     /**
-     * @param $query string
+     * @param string $query string
      *
      * @throws Debugger
      *
@@ -1037,11 +1037,11 @@ class RadeBase
     /**
      * Run a prepared statement.
      *
-     * @param $stmt \mysqli_stmt
+     * @param \mysqli_stmt|null $stmt \mysqli_stmt
      *
      * @throws Debugger
      *
-     * @return bool returns true if the operation is correct, otherwise false
+     * @return null|boolean returns true if the operation is correct, otherwise false
      * @test equals true,$this->RadeBaseManager->runQuery($this->RadeBaseManager->prepare('select 1 from dual'))
      * @test equals [1=>1],$this->RadeBaseManager->select('1')->from('dual')->first(),'it must runs'
      */
@@ -1692,7 +1692,7 @@ class RadeBase
     /**
      * Write a log line for debug, clean the command chain then throw an error (if throwOnError==true).
      *
-     * @param $txt
+     * @param string $txt
      *
      * @throws Debugger
      */

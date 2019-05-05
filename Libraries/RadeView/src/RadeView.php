@@ -315,7 +315,7 @@ class RadeView
     /**
      * Set the compile mode.
      *
-     * @param $mode int See RadeView::MODE_* constants
+     * @param integer $mode int See RadeView::MODE_* constants
      *
      * @return void
      */
@@ -327,7 +327,7 @@ class RadeView
     /**
      * run the blade engine. It returns the result of the code.
      *
-     * @param $view
+     * @param string $view
      * @param array $variables
      *
      * @throws Debugger
@@ -719,7 +719,7 @@ class RadeView
      *
      * @param string $value
      *
-     * @return mixed
+     * @return string
      */
     protected function compileStatements($value)
     {
@@ -1841,7 +1841,7 @@ class RadeView
      *
      * @throws Debugger
      *
-     * @return mixed
+     * @return string
      */
     public function __call($name, $args)
     {
@@ -2430,7 +2430,7 @@ class RadeView
     /**
      * Get the contents of a file.
      *
-     * @param $fileName
+     * @param string $fileName
      *
      * @return string
      */
@@ -2487,7 +2487,7 @@ class RadeView
     }
 
     /**
-     * @param $compiledFile
+     * @param string $compiledFile
      * @param $variables
      *
      * @throws Debugger
@@ -2627,7 +2627,7 @@ class RadeView
      * Determine if a given string contains a given substring.
      *
      * @param string       $haystack
-     * @param string|array $needles
+     * @param string $needles
      *
      * @return bool
      */
@@ -2669,7 +2669,7 @@ class RadeView
      *
      * @param mixed $text
      *
-     * @return null|string|string[]
+     * @return string|null
      */
     protected function stripQuotes($text)
     {
@@ -2682,7 +2682,7 @@ class RadeView
      * Determine if a given string starts with a given substring.
      *
      * @param string       $haystack
-     * @param string|array $needles
+     * @param string $needles
      *
      * @return bool
      */

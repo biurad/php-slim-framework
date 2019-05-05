@@ -122,7 +122,7 @@ class Mail
      * @param $subject string subject
      * @param $body string full mail body text
      *
-     * @return bool the success status of the according mail sending method
+     * @return boolean|null the success status of the according mail sending method
      */
     public function sendMail($user_email, $from_email, $from_name, $subject, $body)
     {
