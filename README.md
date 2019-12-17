@@ -1,4 +1,4 @@
-# Slim-framework
+# [Deprecated] Slim-framework
 
 [![Build Status](https://travis-ci.org/biurad/Slim-framework.svg?branch=master)](https://travis-ci.org/biurad/Slim-framework)
 
